@@ -1,0 +1,6 @@
+[MESSAGES CONTROL]
+disable=too-many-branches,too-few-public-methods,no-else-return,no-else-raise
+
+[MASTER]
+ignore=markdown_it
+

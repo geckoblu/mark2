@@ -1,0 +1,6 @@
+.~lock.*
+__pycache__/
+.vscode/
+src/markdown_it/
+
+README.html
