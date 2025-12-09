@@ -5,8 +5,10 @@ import argparse
 import os
 import sys
 
+from markdown_it import MarkdownIt
+
 from mark2 import argparsext
-from mark2.renderer import HTMLRenderer
+from mark2.renderer import ConTeXtRenderer, HTMLRenderer, PDFRenderer, Renderer
 
 
 def configure_parser() -> argparse.ArgumentParser:
@@ -15,7 +17,7 @@ def configure_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
-    output_choices = ["html", "odt", "epub", "pdf"]
+    output_choices = ["html", "odt", "epub", "pdf", "tex"]
 
     parser = argparse.ArgumentParser(
         description="Convert a Markdown file to various output formats.",
@@ -28,9 +30,9 @@ def configure_parser() -> argparse.ArgumentParser:
         help="input Markdown (.md) file to convert (use '-' for stdin)",
     )
 
-    output_group = parser.add_mutually_exclusive_group()
+    # output_group = parser.add_mutually_exclusive_group()
 
-    output_group.add_argument(
+    parser.add_argument(
         "-f",
         "--format",
         choices=output_choices,
@@ -38,7 +40,7 @@ def configure_parser() -> argparse.ArgumentParser:
         default="html",
     )
 
-    output_group.add_argument(
+    parser.add_argument(
         "-o",
         "--output-filename",
         metavar="OUTPUT_FILENAME",
@@ -53,20 +55,16 @@ def configure_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
-    """Main entry point for the mark2 application."""
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments and determine output settings.
+
+    Returns:
+        Parsed arguments with input_filename, output_filename, format, and quiet flags
+    """
+
     parser = configure_parser()
     args = parser.parse_args()
     # sys.stderr.write(str(args) + "\n")
-
-    # Read input data
-    if args.input_filename == "-":
-        data = sys.stdin.read()
-    else:
-        if not args.quiet:
-            print(f"Reading from '{args.input_filename}'")
-        with open(args.input_filename, "r", encoding="utf-8") as f:
-            data = f.read()
 
     # Determine output filename
     if args.output_filename is None:
@@ -77,37 +75,64 @@ def main() -> None:
             args.output_filename = f"{root}.{args.format}"
             if args.output_filename == args.input_filename:
                 args.output_filename = f"{root}_new.{args.format}"
-            if not args.quiet:
-                print(f"Writing to   '{args.output_filename}'")
     else:
-        __, ext = os.path.splitext(args.output_filename)
-        if ext.startswith("."):
-            ext = ext[1:]
-        args.format = ext
+        if args.output_filename != "-":
+            __, ext = os.path.splitext(args.output_filename)
+            if ext.startswith("."):
+                ext = ext[1:]
+            args.format = ext
+
     if not args.quiet and args.output_filename != "-":
         print(f"Writing to   '{args.output_filename}'")
 
+    return args
+
+
+def read_data(input_filename: str, quiet: bool) -> str:
+    """Read data from the input file or stdin.
+
+    Args:
+        input_filename: Input file name or '-' for stdin
+        quiet: If True, suppress informational messages
+
+    Returns:
+        The content of the input file as a string
+    """
+    if input_filename == "-":
+        data = sys.stdin.read()
+    else:
+        if not quiet:
+            print(f"Reading from '{input_filename}'")
+        with open(input_filename, "r", encoding="utf-8") as f:
+            data = f.read()
+    return data
+
+
+def main() -> None:
+    """Main entry point for the mark2 application."""
+
+    args = parse_args()
+
+    data = read_data(args.input_filename, args.quiet)
+
+    md = MarkdownIt()
+    tokens = md.parse(data)
+
+    renderer: Renderer
     if args.format == "html":
-
-        # markdown_to_html(data, args.output_filename)
         renderer = HTMLRenderer()
-
     # elif args.format == "odt":
-    #     from mark2.markdown2odt import markdown_to_odt
-
-    #     markdown_to_odt(data, args.output_filename)
+    #     renderer = ODTRenderer()
     # elif args.format == "epub":
-    #     from mark2.markdown2epub import markdown_to_epub
-
-    #     markdown_to_epub(data, args.output_filename)
-    # elif args.format == "pdf":
-    #     from mark2.markdown2pdf import markdown_to_pdf
-
-    #     markdown_to_pdf(data, args.output_filename)
+    #     renderer = EPUBRenderer()
+    elif args.format == "pdf":
+        renderer = PDFRenderer()
+    elif args.format == "tex":
+        renderer = ConTeXtRenderer()
     else:
         raise ValueError(f"Unsupported format: {args.format}")
 
-    renderer.render(data, args.output_filename)
+    renderer.render(tokens, args.output_filename, md.options, env={})
 
 
 if __name__ == "__main__":

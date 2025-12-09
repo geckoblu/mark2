@@ -4,3 +4,7 @@ __pycache__/
 src/markdown_it/
 
 README.html
+README.tex
+README.pdf
+README.tuc
+README.log

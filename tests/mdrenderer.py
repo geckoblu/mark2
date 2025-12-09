@@ -8,7 +8,6 @@ class MDRenderer:
 
     def __init__(self) -> None:
         """Initialize the renderer."""
-        pass
 
     def render(self, tokens: list, options: dict | None = None, env: dict | None = None) -> str:
         """

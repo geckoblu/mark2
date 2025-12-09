@@ -1,32 +1,43 @@
 """HTML renderer for converting Markdown to HTML format."""
 
-import sys
-from contextlib import nullcontext
-from markdown_it import MarkdownIt
+from markdown_it.renderer import RendererHTML
+from markdown_it.token import Token
+from markdown_it.utils import EnvType, OptionsDict
+
+from mark2.renderer.base import Renderer
 
 
-class HTMLRenderer:
+class HTMLRenderer(Renderer):
     """A minimal HTML renderer for markdown-it tokens."""
 
     def __init__(self) -> None:
-        """Initialize the renderer."""
+        """Initialize the HTML renderer.
 
-    def render(self, data: str, output_filename: str) -> None:
-        """Render Markdown data to HTML format.
+        Uses markdown-it's built-in RendererHTML for token rendering.
+        """
+        self.renderer = RendererHTML()
+
+    def render(
+        self,
+        tokens: list[Token],
+        output_filename: str,
+        options: OptionsDict,
+        env: EnvType | None = None,
+    ) -> None:
+        """Render markdown-it tokens to HTML format with custom styling.
+
+        Generates a complete HTML document with header and footer, including
+        CSS styling for justified text.
 
         Args:
-            data: Markdown content as string
+            tokens: List of tokens from markdown-it parser
             output_filename: Output file path (use '-' for stdout)
+            options: Optional rendering options from markdown-it
+            env: Optional environment variables for rendering context
         """
-        md = MarkdownIt()
-        html = md.render(data)
+        html = self.renderer.render(tokens, options, env)
 
-        if output_filename == "-":
-            context = nullcontext(sys.stdout)
-        else:
-            context = open(output_filename, "w", encoding="utf-8")
-
-        with context as writer:
+        with self._open_output(output_filename) as writer:
             print(HTML_HEADER, file=writer)
             print(html, file=writer)
             print(HTML_FOOTER, file=writer)
