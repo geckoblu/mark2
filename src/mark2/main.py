@@ -8,7 +8,24 @@ import sys
 from markdown_it import MarkdownIt
 
 from mark2 import argparsext
-from mark2.renderer import ConTeXtRenderer, HTMLRenderer, PDFRenderer, Renderer
+from mark2.renderer import ConTeXtRenderer, EPUBRenderer, HTMLRenderer, PDFRenderer, Renderer
+
+
+def read_data(input_filename: str) -> str:
+    """Read data from the input file or stdin.
+
+    Args:
+        input_filename: Input file name or '-' for stdin
+
+    Returns:
+        The content of the input file as a string
+    """
+    if input_filename == "-":
+        data = sys.stdin.read()
+    else:
+        with open(input_filename, "r", encoding="utf-8") as f:
+            data = f.read()
+    return data
 
 
 def configure_parser() -> argparse.ArgumentParser:
@@ -17,7 +34,7 @@ def configure_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
-    output_choices = ["html", "odt", "epub", "pdf", "tex"]
+    output_choices = ["html", "epub", "pdf", "tex"]
 
     parser = argparse.ArgumentParser(
         description="Convert a Markdown file to various output formats.",
@@ -48,18 +65,70 @@ def configure_parser() -> argparse.ArgumentParser:
         help="output file name (use '-' for stdout) [default: input name with format extension]",
     )
 
-    parser.add_argument("-q", "--quiet", action="store_true", help="suppress non-error messages")
+    # --- format-specific options ----------------
+    # EPUB options -------------------------------
+    epub_group = parser.add_argument_group("EPUB options")
+    epub_group.add_argument(
+        "--epub-cover",
+        type=argparsext.FileType("r", extension=["jpg", "jpeg", "png"]),
+        help="cover image for epub",
+    )
+    epub_group.add_argument(
+        "--epub-stylesheet",
+        type=argparsext.FileType("r", extension=["css"]),
+        help="stylesheet for epub",
+    )
 
-    # parser.add_argument("-aj", action="store_true", help="Output JSON AST")
+    # html_group = parser.add_argument_group("HTML options")
+    # html_group.add_argument("--html-css", help="CSS file to embed in HTML output")
+
+    # pdf_group = parser.add_argument_group("PDF options")
+    # pdf_group.add_argument("--pdf-engine", choices=["weasyprint", "wkhtmltopdf"])
+    # pdf_group.add_argument("--pdf-margins", metavar="MM")
+
+    # tex_group = parser.add_argument_group("ConTeXt options")
+    # tex_group.add_argument("--tex-engine", choices=["xelatex", "lualatex"])
+
+    parser.add_argument("-q", "--quiet", action="store_true", help="suppress non-error messages")
 
     return parser
 
 
+def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """Validate command-line arguments for format-specific options.
+
+    Args:
+        args: Parsed command-line arguments
+        parser: ArgumentParser instance for error reporting
+
+    Raises:
+        SystemExit: If format-specific options are used with incompatible formats
+    """
+
+    fmt = args.format
+
+    if fmt != "epub" and args.epub_cover:
+        parser.error("--epub-cover is only valid with --format epub")
+    if fmt != "epub" and args.epub_stylesheet:
+        parser.error("--epub-stylesheet is only valid with --format epub")
+
+    # if fmt != "html" and args.html_css:
+    #     parser.error("--html-css is only valid with --format html")
+
+    # if fmt != "pdf" and (args.pdf_engine or args.pdf_margins):
+    #     parser.error("--pdf-* options are only valid with --format pdf")
+
+    # if fmt != "tex" and args.tex_engine:
+    #     parser.error("--tex-engine is only valid with --format tex")
+
+
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments and determine output settings.
+    """Parse and validate command-line arguments and determine output settings.
+
+    Determines the output filename if not specified and validates format-specific options.
 
     Returns:
-        Parsed arguments with input_filename, output_filename, format, and quiet flags
+        Parsed and validated arguments with input_filename, output_filename, format, and quiet flags
     """
 
     parser = configure_parser()
@@ -82,30 +151,9 @@ def parse_args() -> argparse.Namespace:
                 ext = ext[1:]
             args.format = ext
 
-    if not args.quiet and args.output_filename != "-":
-        print(f"Writing to   '{args.output_filename}'")
+    validate_args(args, parser)
 
     return args
-
-
-def read_data(input_filename: str, quiet: bool) -> str:
-    """Read data from the input file or stdin.
-
-    Args:
-        input_filename: Input file name or '-' for stdin
-        quiet: If True, suppress informational messages
-
-    Returns:
-        The content of the input file as a string
-    """
-    if input_filename == "-":
-        data = sys.stdin.read()
-    else:
-        if not quiet:
-            print(f"Reading from '{input_filename}'")
-        with open(input_filename, "r", encoding="utf-8") as f:
-            data = f.read()
-    return data
 
 
 def main() -> None:
@@ -113,26 +161,33 @@ def main() -> None:
 
     args = parse_args()
 
-    data = read_data(args.input_filename, args.quiet)
+    data = read_data(args.input_filename)
+
+    if not args.quiet and args.input_filename != "-":
+        print(f"Reading from '{args.input_filename}'")
+    if not args.quiet and args.output_filename != "-":
+        print(f"Writing to   '{args.output_filename}'")
 
     md = MarkdownIt()
-    tokens = md.parse(data)
 
+    options = md.options
+    env = {}
     renderer: Renderer
     if args.format == "html":
-        renderer = HTMLRenderer()
+        renderer = HTMLRenderer(args, options, env)
     # elif args.format == "odt":
     #     renderer = ODTRenderer()
-    # elif args.format == "epub":
-    #     renderer = EPUBRenderer()
+    elif args.format == "epub":
+        renderer = EPUBRenderer(args, options, env)
     elif args.format == "pdf":
-        renderer = PDFRenderer()
+        renderer = PDFRenderer(args, options, env)
     elif args.format == "tex":
-        renderer = ConTeXtRenderer()
+        renderer = ConTeXtRenderer(args, options, env)
     else:
         raise ValueError(f"Unsupported format: {args.format}")
 
-    renderer.render(tokens, args.output_filename, md.options, env={})
+    tokens = md.parse(data)
+    renderer.render(tokens, args.output_filename)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 """Minimal ConTeXt renderer compatible with markdown-it."""
 
+import argparse
+
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
@@ -9,11 +11,13 @@ from mark2.renderer.base import Renderer
 class ConTeXtRenderer(Renderer):
     """A minimal ConTeXt renderer for markdown-it tokens."""
 
-    def __init__(self) -> None:
+    def __init__(self, args: argparse.Namespace, options: OptionsDict, env: EnvType) -> None:
         """Initialize the ConTeXt renderer.
 
         Sets up state tracking for link rendering.
         """
+        super().__init__(args, options, env)
+
         self.in_link = False
         self.link_href = ""
 
@@ -21,22 +25,13 @@ class ConTeXtRenderer(Renderer):
         self,
         tokens: list[Token],
         output_filename: str,
-        options: OptionsDict,
-        env: EnvType | None = None,
     ) -> None:
-        """
-        Render markdown-it tokens to ConTeXt.
+        """Render markdown-it tokens to ConTeXt.
 
         Args:
             tokens: List of tokens from markdown-it parser
             output_filename: Output file path (use '-' for stdout)
-            options: Optional rendering options
-            env: Optional environment variables
         """
-        if options is None:
-            options = {}
-        if env is None:
-            env = {}
 
         result = []
         self._render_tokens(tokens, result)

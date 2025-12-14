@@ -1,5 +1,6 @@
-"""Minimal Pdf renderer compatible with markdown-it."""
+"""Minimal PDF renderer compatible with markdown-it."""
 
+import argparse
 import sys
 import tempfile
 import subprocess
@@ -14,20 +15,21 @@ from mark2.renderer.context import ConTeXtRenderer
 
 
 class PDFRenderer(Renderer):
-    """A minimal Pdf renderer for markdown-it tokens."""
+    """A minimal PDF renderer for markdown-it tokens."""
 
-    def __init__(self) -> None:
+    def __init__(self, args: argparse.Namespace, options: OptionsDict, env: EnvType) -> None:
         """Initialize the PDF renderer.
 
         This renderer uses ConTeXt to generate PDFs from markdown-it tokens.
         """
+        super().__init__(args, options, env)
+
+        self.args = args
 
     def render(
         self,
         tokens: list[Token],
         output_filename: str,
-        options: OptionsDict,
-        env: EnvType | None = None,
     ) -> None:
         """Render markdown-it tokens to PDF via ConTeXt.
 
@@ -37,20 +39,14 @@ class PDFRenderer(Renderer):
         Args:
             tokens: List of tokens from markdown-it parser
             output_filename: Output file path (use '-' for stdout to write binary PDF)
-            options: Optional rendering options
-            env: Optional environment variables
 
         Raises:
             SystemExit: If ConTeXt is not installed or compilation fails
         """
-        if options is None:
-            options = {}
-        if env is None:
-            env = {}
 
         with tempfile.TemporaryDirectory() as tmpdir:
             p = Path(tmpdir) / "temp.tex"
-            ConTeXtRenderer().render(tokens, str(p), options, env)
+            ConTeXtRenderer(self.args, self.options, self.env).render(tokens, str(p))
 
             try:
                 result = subprocess.run(
