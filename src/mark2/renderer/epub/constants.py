@@ -44,9 +44,11 @@ CONTENT_OPF = """<?xml version="1.0" encoding="utf-8"?>
     <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="modification">2024-02-21</dc:date>
   </metadata>
   <manifest>
-%(manifest)s  </manifest>
+%(manifest)s
+  </manifest>
   <spine toc="ncx">
-%(spine)s  </spine>
+%(spine)s
+  </spine>
 %(guide)s
 </package>"""
 

@@ -1,19 +1,18 @@
-"""Minimal EPUB renderer compatible with markdown-it."""
+"""EPUB renderer for converting Markdown to EPUB format."""
 
-import argparse
-import sys
-import tempfile
-import shutil
+from typing import Any, Sequence
 import uuid
 import zipfile
+import tempfile
+import shutil
+import sys
 from pathlib import Path
 
 from markdown_it.renderer import RendererHTML
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
-from mark2.renderer.epub.imagesize import get_image_size
 
-from mark2.renderer.base import Renderer
+from mark2.renderer.epub.imagesize import get_image_size
 from mark2.renderer.epub.constants import (
     MIMETYPE,
     CONTAINER_XML,
@@ -26,40 +25,34 @@ from mark2.renderer.epub.constants import (
 )
 
 
-class EPUBRenderer(Renderer):
+class EPUBRenderer(RendererHTML):
     """A minimal EPUB renderer for markdown-it tokens."""
 
-    def __init__(self, args: argparse.Namespace, options: OptionsDict, env: EnvType) -> None:
-        """Initialize EPUB renderer.
+    __output__ = "epub"
+
+    def __init__(self, parser: Any = None):
+        """Initialize the renderer.
 
         This renderer generates EPUB files from markdown-it tokens using HTML rendering.
         """
-        super().__init__(args, options, env)
-
-        self.cover = args.epub_cover
-        self.stylesheet = args.epub_stylesheet
-
-        self.renderer = RendererHTML()
+        super().__init__(parser)
 
         self.manifest = []  # Store (id, href, media-type) tuples
         self.spine = []  # Store itemref ids for content.opf
         self.guide = []  # Store guide entries for content.opf
         self.toc_entries = []  # Store (title, page_num) tuples
 
-    def render(
-        self,
-        tokens: list[Token],
-        output_filename: str,
-    ) -> None:
-        """Render markdown-it tokens to EPUB format.
+    def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
+        """Takes token stream and generates HTML.
 
-        This method converts tokens to HTML, splits content by h2 headings into pages,
-        and packages everything into an EPUB archive with proper metadata and TOC.
+        :param tokens: list on block tokens to render
+        :param options: params of parser instance
+        :param env: additional data from parsed input
 
-        Args:
-            tokens: List of tokens from markdown-it parser
-            output_filename: Output file path for the EPUB file
         """
+        cover = env.get("epub_cover", None)
+        stylesheet = env.get("epub_stylesheet", None)
+        output_filename = env.get("output_filename", "-")
 
         self.manifest = []
         self.manifest.append(("ncx", "toc.ncx", "application/x-dtbncx+xml"))
@@ -72,11 +65,11 @@ class EPUBRenderer(Renderer):
         epubuuid = uuid.uuid4()
         basename = Path(output_filename).stem
 
-        pages = self.generate_content(tokens)
+        pages = self.generate_content(tokens, options, env)
         toctxt = self.generate_toc()
 
-        if self.stylesheet is not None:
-            with open(self.stylesheet, "r", encoding="utf-8") as f:
+        if stylesheet is not None:
+            with open(stylesheet, "r", encoding="utf-8") as f:
                 stylesheet_content = f.read()
         else:
             stylesheet_content = DEFAULT_STYLESHEET
@@ -92,7 +85,7 @@ class EPUBRenderer(Renderer):
                 # Add META-INF/container.xml
                 epub.writestr("META-INF/container.xml", CONTAINER_XML)
                 # Add cover image if provided
-                self.write_cover(epub)
+                self.write_cover(epub, cover)
                 # Add content
                 self.write_content(epub, pages)
                 # Add content.opf
@@ -114,14 +107,14 @@ class EPUBRenderer(Renderer):
             # Clean up temporary file
             Path(tmp_path).unlink(missing_ok=True)
 
-    def write_cover(self, epub: zipfile.ZipFile) -> None:
+    def write_cover(self, epub: zipfile.ZipFile, cover: str) -> None:
         """Write cover image to the EPUB archive if provided.
 
         Args:
             epub: ZipFile object representing the EPUB archive
         """
-        if self.cover is not None:
-            cover_path = Path(self.cover)
+        if cover is not None:
+            cover_path = Path(cover)
             if cover_path.is_file():
                 cover_id = "cover"
                 cover_name = "cover" + cover_path.suffix.lower()
@@ -146,7 +139,9 @@ class EPUBRenderer(Renderer):
                 self.manifest.append(("cover.xhtml", "cover.xhtml", "application/xhtml+xml"))
                 self.spine.insert(0, "cover.xhtml")
 
-    def generate_content(self, tokens: list[Token]) -> list[str]:
+    def generate_content(
+        self, tokens: list[Token], options: OptionsDict, env: EnvType
+    ) -> list[str]:
         """Generate HTML content pages from tokens.
 
         Splits tokens by h2 headings and extracts all heading levels for TOC generation.
@@ -188,7 +183,7 @@ class EPUBRenderer(Renderer):
         # Render each chunk
         pages = []
         for chunk in chunks:
-            html = self.renderer.render(chunk, self.options, self.env)
+            html = super().render(chunk, options, env)
             html = HTML_HEAD + html + HTML_TAIL
             pages.append(html)
 
@@ -222,12 +217,13 @@ class EPUBRenderer(Renderer):
             epubuuid: Unique identifier for the EPUB
         """
 
-        manifest = ""
-        for item_id, href, media_type in self.manifest:
-            manifest += f'    <item id="{item_id}" href="{href}" media-type="{media_type}"/>\n'
-        spine = ""
-        for item_id in self.spine:
-            spine += f'    <itemref idref="{item_id}"/>\n'
+        manifest = "\n".join(
+            f'    <item id="{item_id}" href="{href}" media-type="{media_type}"/>'
+            for item_id, href, media_type in self.manifest
+        )
+
+        spine = "\n".join(f'    <itemref idref="{item_id}"/>' for item_id in self.spine)
+
         if len(self.guide) > 0:
             guide = "  <guide>\n"
             for type_, title, href in self.guide:

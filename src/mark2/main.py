@@ -5,10 +5,20 @@ import argparse
 import os
 import sys
 
+
+from mdit_py_plugins.footnote import footnote_plugin
+
 from markdown_it import MarkdownIt
+from markdown_it.utils import EnvType
 
 from mark2 import argparsext
-from mark2.renderer import ConTeXtRenderer, EPUBRenderer, HTMLRenderer, PDFRenderer, Renderer
+from mark2.renderer import (
+    ConTeXtRenderer,
+    EPUBRenderer,
+    HTMLRenderer,
+    PDFRenderer,
+    ReferenceHTMLRenderer,
+)
 
 
 def read_data(input_filename: str) -> str:
@@ -66,6 +76,7 @@ def configure_parser() -> argparse.ArgumentParser:
     )
 
     # --- format-specific options ----------------
+
     # EPUB options -------------------------------
     epub_group = parser.add_argument_group("EPUB options")
     epub_group.add_argument(
@@ -88,6 +99,19 @@ def configure_parser() -> argparse.ArgumentParser:
 
     # tex_group = parser.add_argument_group("ConTeXt options")
     # tex_group.add_argument("--tex-engine", choices=["xelatex", "lualatex"])
+
+    # Hidden/development options
+    dev_group = parser.add_mutually_exclusive_group()
+    dev_group.add_argument(
+        "--reference-html",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    dev_group.add_argument(
+        "--reference-html-test",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
 
     parser.add_argument("-q", "--quiet", action="store_true", help="suppress non-error messages")
 
@@ -133,7 +157,6 @@ def parse_args() -> argparse.Namespace:
 
     parser = configure_parser()
     args = parser.parse_args()
-    # sys.stderr.write(str(args) + "\n")
 
     # Determine output filename
     if args.output_filename is None:
@@ -156,38 +179,77 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def get_env(args: argparse.Namespace) -> EnvType:
+    """Construct the environment dictionary for the MarkdownIt parser.
+
+    Args:
+        args: Parsed command-line arguments
+    Returns:
+        Environment dictionary with format-specific settings
+    """
+    env: EnvType = {}
+
+    env["input_filename"] = args.input_filename
+    env["output_filename"] = args.output_filename
+    env["output_format"] = args.format
+    env["quiet"] = args.quiet
+
+    if args.format == "epub":
+        env["epub_cover"] = args.epub_cover
+        env["epub_stylesheet"] = args.epub_stylesheet
+
+    # if args.format == "html":
+    #     env["html_css"] = args.html_css
+
+    # if args.format == "pdf":
+    #     env["pdf_engine"] = args.pdf_engine
+    #     env["pdf_margins"] = args.pdf_margins
+
+    # if args.format == "tex":
+    #     env["tex_engine"] = args.tex_engine
+
+    return env
+
+
 def main() -> None:
     """Main entry point for the mark2 application."""
 
     args = parse_args()
-
-    data = read_data(args.input_filename)
+    # sys.stderr.write(str(args) + "\n")
 
     if not args.quiet and args.input_filename != "-":
         print(f"Reading from '{args.input_filename}'")
     if not args.quiet and args.output_filename != "-":
         print(f"Writing to   '{args.output_filename}'")
 
-    md = MarkdownIt()
-
-    options = md.options
-    env = {}
-    renderer: Renderer
-    if args.format == "html":
-        renderer = HTMLRenderer(args, options, env)
+    if args.reference_html:
+        renderer_cls = ReferenceHTMLRenderer
+    elif args.format == "html":
+        renderer_cls = HTMLRenderer
     # elif args.format == "odt":
-    #     renderer = ODTRenderer()
+    #     renrenderer_clsderer = ODTRenderer()
     elif args.format == "epub":
-        renderer = EPUBRenderer(args, options, env)
+        renderer_cls = EPUBRenderer
     elif args.format == "pdf":
-        renderer = PDFRenderer(args, options, env)
+        renderer_cls = PDFRenderer
     elif args.format == "tex":
-        renderer = ConTeXtRenderer(args, options, env)
+        renderer_cls = ConTeXtRenderer
     else:
         raise ValueError(f"Unsupported format: {args.format}")
 
-    tokens = md.parse(data)
-    renderer.render(tokens, args.output_filename)
+    env = get_env(args)
+
+    data = read_data(args.input_filename)
+
+    # md = MarkdownIt()
+    md = MarkdownIt(renderer_cls=renderer_cls).use(footnote_plugin)
+    md.render(data, env=env)
+
+    # if args.reference_html_test:
+    #     renderer_cls = ReferenceHTMLTestRenderer
+
+    # tokens = md.parse(data)
+    # renderer.render(tokens, args.output_filename)
 
 
 if __name__ == "__main__":

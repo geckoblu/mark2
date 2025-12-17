@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=no-else-raise,no-else-return,too-many-branches,too-few-public-methods,too-many-statements
+disable=no-else-raise,no-else-return,too-few-public-methods,too-many-branches,too-many-locals,too-many-public-methods,too-many-statements,unnecessary-pass,unused-argument
 
 [MASTER]
 ignore=markdown_it

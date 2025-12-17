@@ -1,54 +1,322 @@
 """Base class for mark2 renderers."""
 
-import argparse
+import inspect
 import sys
-from abc import ABC, abstractmethod
-from contextlib import nullcontext
-from typing import ContextManager, TextIO
+from typing import Any, Sequence
 
-from markdown_it.token import Token
+from markdown_it.renderer import RendererProtocol, Token
 from markdown_it.utils import EnvType, OptionsDict
 
 
-class Renderer(ABC):
-    """Abstract base class defining the interface for all mark2 renderers."""
+class Renderer(RendererProtocol):
+    """Base class for all mark2 renderers."""
 
-    def __init__(self, args: argparse.Namespace, options: OptionsDict, env: EnvType) -> None:
+    def __init__(self, parser: Any = None):
         """Initialize the renderer."""
-        if options is None:
-            self.options = {}
-        else:
-            self.options = options
-        if env is None:
-            self.env = {}
-        else:
-            self.env = env
+        self.rules = {
+            k: v
+            for k, v in inspect.getmembers(self, predicate=inspect.ismethod)
+            if not (k.startswith("render") or k.startswith("_"))
+        }
 
-        self.quiet = args.quiet
+    def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
+        """Takes token stream and generates output.
 
-    @abstractmethod
-    def render(
+        :param tokens: list on block tokens to render
+        :param options: params of parser instance
+        :param env: additional data from parsed input
+
+        """
+        for i, token in enumerate(tokens):
+            if token.type == "inline":
+                if token.children:
+                    self.render_inline(token.children, options, env)
+            elif token.type in self.rules:
+                self.rules[token.type](tokens, i, options, env)
+            else:
+                self.render_token(tokens, i, options, env)
+
+    def render_inline(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
+        """The same as ``render``, but for single token of `inline` type.
+
+        :param tokens: list on block tokens to render
+        :param options: params of parser instance
+        :param env: additional data from parsed input (references, for example)
+        """
+        for i, token in enumerate(tokens):
+            if token.type in self.rules:
+                self.rules[token.type](tokens, i, options, env)
+            else:
+                self.render_token(tokens, i, options, env)
+
+    def render_token(
         self,
-        tokens: list[Token],
-        output_filename: str,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
     ) -> None:
-        """Render markdown-it tokens to the target format.
+        """Default token renderer.
 
-        Args:
-            tokens: List of tokens from markdown-it parser
-            output_filename: Output file path (use '-' for stdout)
+        Can be overridden by custom function
+
+        :param idx: token index to render
+        :param options: params of parser instance
         """
+        # raise NotImplementedError(f"[{tokens[idx]}]")
+        print(f"[UNHANDLED TOKEN] {tokens[idx]}", file=sys.stderr)
+        sys.exit(1)
 
-    def _open_output(self, output_filename: str) -> ContextManager[TextIO]:
-        """Get a context manager for writing output.
+    def _debug(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render opening paragraph token."""
+        token = tokens[idx]
+        print(
+            f"[RENDER] {token.type}: tag={token.tag}, nesting={token.nesting}, attrs={token.attrs}, content='{token.content}'",  # pylint: disable=line-too-long
+            file=sys.stderr,
+        )
 
-        Args:
-            output_filename: Output file path (use '-' for stdout)
+    ###########################################################################
+    # All the methods not starting with "render" nor "_" are rules renderers
+    ###########################################################################
 
-        Returns:
-            A context manager that yields a file-like object for writing
-        """
-        if output_filename == "-":
-            return nullcontext(sys.stdout)
-        else:
-            return open(output_filename, "w", encoding="utf-8")
+    def paragraph_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening paragraph token."""
+        self._debug(tokens, idx, options, env)
+
+    def paragraph_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing paragraph token."""
+        self._debug(tokens, idx, options, env)
+
+    def text(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render text token."""
+        self._debug(tokens, idx, options, env)
+
+    def em_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening emphasis token."""
+        self._debug(tokens, idx, options, env)
+
+    def em_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing emphasis token."""
+        self._debug(tokens, idx, options, env)
+
+    def heading_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening heading token."""
+        self._debug(tokens, idx, options, env)
+
+    def heading_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing heading token."""
+        self._debug(tokens, idx, options, env)
+
+    def bullet_list_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening bullet list token."""
+        self._debug(tokens, idx, options, env)
+
+    def bullet_list_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing bullet list token."""
+        self._debug(tokens, idx, options, env)
+
+    def ordered_list_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening ordered list token."""
+        self._debug(tokens, idx, options, env)
+
+    def ordered_list_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing ordered list token."""
+        self._debug(tokens, idx, options, env)
+
+    def list_item_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening list item token."""
+        self._debug(tokens, idx, options, env)
+
+    def list_item_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing list item token."""
+        self._debug(tokens, idx, options, env)
+
+    def link_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening link token."""
+        self._debug(tokens, idx, options, env)
+
+    def link_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing link token."""
+        self._debug(tokens, idx, options, env)
+
+    def strong_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening strong/bold token."""
+        self._debug(tokens, idx, options, env)
+
+    def strong_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing strong/bold token."""
+        self._debug(tokens, idx, options, env)
+
+    def code_inline(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render inline code token."""
+        self._debug(tokens, idx, options, env)
+
+    def code_block(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render code block token."""
+        self._debug(tokens, idx, options, env)
+
+    def fence(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render fenced code block token."""
+        self._debug(tokens, idx, options, env)
+
+    def blockquote_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening blockquote token."""
+        self._debug(tokens, idx, options, env)
+
+    def blockquote_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing blockquote token."""
+        self._debug(tokens, idx, options, env)
+
+    def hr(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render horizontal rule token."""
+        self._debug(tokens, idx, options, env)
+
+    def image(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render image token."""
+        self._debug(tokens, idx, options, env)
+
+    def hardbreak(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render hard line break token."""
+        self._debug(tokens, idx, options, env)
+
+    def softbreak(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render soft line break token."""
+        self._debug(tokens, idx, options, env)
+
+    def html_block(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render HTML block token."""
+        self._debug(tokens, idx, options, env)
+
+    def html_inline(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render inline HTML token."""
+        self._debug(tokens, idx, options, env)
+
+    def s_open(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render opening strikethrough token."""
+        self._debug(tokens, idx, options, env)
+
+    def s_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing strikethrough token."""
+        self._debug(tokens, idx, options, env)
+
+    def table_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening table token."""
+        self._debug(tokens, idx, options, env)
+
+    def table_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing table token."""
+        self._debug(tokens, idx, options, env)
+
+    def thead_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening table header token."""
+        self._debug(tokens, idx, options, env)
+
+    def thead_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing table header token."""
+        self._debug(tokens, idx, options, env)
+
+    def tbody_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening table body token."""
+        self._debug(tokens, idx, options, env)
+
+    def tbody_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing table body token."""
+        self._debug(tokens, idx, options, env)
+
+    def tr_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening table row token."""
+        self._debug(tokens, idx, options, env)
+
+    def tr_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing table row token."""
+        self._debug(tokens, idx, options, env)
+
+    def th_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening table header cell token."""
+        self._debug(tokens, idx, options, env)
+
+    def th_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing table header cell token."""
+        self._debug(tokens, idx, options, env)
+
+    def td_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening table data cell token."""
+        self._debug(tokens, idx, options, env)
+
+    def td_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing table data cell token."""
+        self._debug(tokens, idx, options, env)

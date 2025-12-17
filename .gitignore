@@ -1,7 +1,10 @@
 .~lock.*
 __pycache__/
+.pytest_cache/
+.ruff_cache/
 .vscode/
 src/markdown_it/
+
 
 README.html
 README.tex
