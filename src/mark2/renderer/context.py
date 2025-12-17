@@ -46,33 +46,6 @@ class ConTeXtRenderer(Renderer):
         with open_output(output_filename) as writer:
             print(tex, file=writer)
 
-    def _get_attr(self, token: Token, attr_name: str) -> str | None:
-        """Get attribute value from token.
-
-        Args:
-            token: The markdown-it token to extract attribute from
-            attr_name: The name of the attribute to retrieve
-
-        Returns:
-            The attribute value if found, None otherwise
-        """
-        if token.attrs:
-            for attr in token.attrs:
-                if attr[0] == attr_name:
-                    return attr[1]
-        return None
-
-    def _get_href(self, token: Token) -> str | None:
-        """Get href attribute from link token.
-
-        Args:
-            token: The markdown-it link token
-
-        Returns:
-            The href URL if found, None otherwise
-        """
-        return self._get_attr(token, "href")
-
     def _escape_tex(self, text: str) -> str:
         """Escape special ConTeXt/TeX characters.
 

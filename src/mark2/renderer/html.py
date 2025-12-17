@@ -1,6 +1,6 @@
 """HTML renderer for converting Markdown to HTML format."""
 
-from typing import Any, Sequence
+from typing import Sequence
 
 from markdown_it.renderer import RendererHTML
 from markdown_it.token import Token
