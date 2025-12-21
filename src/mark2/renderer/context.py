@@ -352,7 +352,9 @@ class ConTeXtRenderer(Renderer):
         self.result.append(" \\eTD\n")
 
 
-CONTEXT_HEADER = """\\starttext
+CONTEXT_HEADER = """% !TeX program = context
+% ConTeXt Mk XL (LuaMetaTeX)
+\\starttext
 """
 
 CONTEXT_FOOTER = """\\stoptext

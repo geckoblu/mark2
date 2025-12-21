@@ -67,11 +67,18 @@ class Renderer(RendererProtocol):
         print(f"[UNHANDLED TOKEN] {tokens[idx]}", file=sys.stderr)
         sys.exit(1)
 
-    def _debug(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+    def _debug(
+        self,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
+        name: str = "[RENDER]",
+    ) -> None:
         """Render opening paragraph token."""
         token = tokens[idx]
         print(
-            f"[RENDER] {token.type}: tag={token.tag}, nesting={token.nesting}, attrs={token.attrs}, content='{token.content}'",  # pylint: disable=line-too-long
+            f"{name} {token.type}: tag={token.tag}, nesting={token.nesting}, attrs={token.attrs}, content='{token.content}'",  # pylint: disable=line-too-long
             file=sys.stderr,
         )
 
@@ -347,3 +354,71 @@ class Renderer(RendererProtocol):
     ) -> None:
         """Render closing table data cell token."""
         self._debug(tokens, idx, options, env)
+
+    ###########################################################################
+    # Footnote plugin renderers
+    ###########################################################################
+
+    # Helper methods (return values, used by other render rules)
+    def footnote_anchor_name(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Generate footnote anchor ID."""
+        # return render_footnote_anchor_name(self, tokens, idx, options, env)
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_caption(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Generate footnote caption text."""
+        # return render_footnote_caption(self, tokens, idx, options, env)
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    # Token renderers
+    def footnote_ref(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render footnote reference (inline superscript link)."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_block_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening of footnote block section."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_block_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing of footnote block section."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening of individual footnote item."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing of individual footnote item."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_anchor(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render back-reference link at end of footnote."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_reference_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening of footnote reference item (in footnote block)."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    def footnote_reference_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing of footnote reference item (in footnote block)."""
+        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")

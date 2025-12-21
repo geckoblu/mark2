@@ -28,7 +28,7 @@ from mark2.renderer.epub.constants import (
 class EPUBRenderer(RendererHTML):
     """A minimal EPUB renderer for markdown-it tokens."""
 
-    __output__ = "epub"
+    # __output__ = "epub"
 
     def __init__(self, parser: Any = None):
         """Initialize the renderer.
@@ -208,12 +208,12 @@ class EPUBRenderer(RendererHTML):
             self.spine.append(page_id)
             epub.writestr(f"OEBPS/{page_name}", page)
 
-    def write_content_opf(self, epub: zipfile.ZipFile, basename: str, epubuuid: uuid.UUID) -> None:
+    def write_content_opf(self, epub: zipfile.ZipFile, doctitle: str, epubuuid: uuid.UUID) -> None:
         """Write the OPF (Open Packaging Format) file to the EPUB archive.
 
         Args:
             epub: ZipFile object representing the EPUB archive
-            basename: Base name for the title
+            title: Title of the EPUB
             epubuuid: Unique identifier for the EPUB
         """
 
@@ -236,7 +236,7 @@ class EPUBRenderer(RendererHTML):
             "OEBPS/content.opf",
             CONTENT_OPF
             % {
-                "title": basename,
+                "title": doctitle,
                 "manifest": manifest,
                 "spine": spine,
                 "guide": guide,

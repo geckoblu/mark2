@@ -1,6 +1,7 @@
 """HTML renderer for converting Markdown to HTML format."""
 
 from typing import Sequence
+from pathlib import Path
 
 from markdown_it.renderer import RendererHTML
 from markdown_it.token import Token
@@ -27,8 +28,9 @@ class HTMLRenderer(RendererHTML):
         html = super().render(tokens, options, env)
 
         output_filename = env.get("output_filename", "-")
+        basename = Path(output_filename).stem
         with open_output(output_filename) as writer:
-            print(HTML_HEADER, file=writer)
+            print(HTML_HEADER % {"title": basename}, file=writer)
             print(html, file=writer)
             print(HTML_FOOTER, file=writer)
 
@@ -36,8 +38,11 @@ class HTMLRenderer(RendererHTML):
 HTML_HEADER = """<!DOCTYPE html>
 <html>
 <head>
+  <title>%(title)s</title>
 <style>
   p {
+    margin: 0;
+    text-indent: 1em;
     text-align: justify;
   }
 </style>
