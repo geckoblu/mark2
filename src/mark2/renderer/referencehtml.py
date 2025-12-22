@@ -489,13 +489,15 @@ class ReferenceHTMLRenderer(Renderer):
     def footnote_anchor_name(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> str:
-        """Generate footnote anchor ID."""
+        """Generate footnote anchor ID.
+        The anchor name is used in HTML id and href attributes for linking."""
         return render_footnote_anchor_name(self, tokens, idx, options, env)
 
     def footnote_caption(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> str:
-        """Generate footnote caption text."""
+        """Generate footnote caption text.
+        The caption is what's displayed to users (the visible number)."""
         return render_footnote_caption(self, tokens, idx, options, env)
 
     # Token renderers

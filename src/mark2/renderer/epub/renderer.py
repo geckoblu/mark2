@@ -285,3 +285,105 @@ class EPUBRenderer(RendererHTML):
             navpoints += f"{indent}</navPoint>\n"
 
         return navpoints
+
+    ###########################################################################
+    # Footnote plugin renderers
+    ###########################################################################
+
+    # Helper methods (return values, used by other render rules)
+
+    def footnote_anchor_name(
+        self,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
+    ) -> str:
+        """Generate footnote anchor ID.
+        The anchor name is used in HTML id and href attributes for linking."""
+        n = str(tokens[idx].meta["id"] + 1)
+        prefix = ""
+
+        doc_id = env.get("docId", None)
+        if isinstance(doc_id, str):
+            prefix = f"-{doc_id}-"
+
+        return prefix + n
+
+    def footnote_caption(
+        self,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
+    ) -> str:
+        """Generate footnote caption text.
+        The caption is what's displayed to users (the visible number)."""
+        n = str(tokens[idx].meta["id"] + 1)
+
+        if tokens[idx].meta.get("subId", -1) > 0:
+            n += ":" + str(tokens[idx].meta["subId"])
+
+        return n
+
+    # Token renderers
+    def footnote_ref(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render footnote reference in the text."""
+        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
+
+        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
+        refid = ident
+
+        if tokens[idx].meta.get("subId", -1) > 0:
+            refid += ":" + str(tokens[idx].meta["subId"])
+
+        ref = (
+            '<a href="#fn'
+            + ident
+            + '" id="fnref'
+            + refid
+            + '"><sup class="footnote-ref">'
+            + caption
+            + "</sup></a>"
+        )
+
+        # print(ref)
+        return ref
+
+    def footnote_block_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render opening of footnote block section."""
+        return '<div class="notes">\n'
+
+    def footnote_block_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render closing of footnote block section."""
+        return "</div>\n"
+
+    def footnote_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render opening of individual footnote item."""
+        return '<div class="note">\n'
+
+    def footnote_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render closing of individual footnote item."""
+        return "</div>\n"
+
+    def footnote_anchor(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render back-reference link at end of footnote."""
+        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
+
+        if tokens[idx].meta["subId"] > 0:
+            ident += ":" + str(tokens[idx].meta["subId"])
+
+        # ↩ with escape code to prevent display as Apple Emoji on iOS
+        return ' <a href="#fnref' + ident + '" class="footnote-backref">\u21a9\ufe0e</a>'

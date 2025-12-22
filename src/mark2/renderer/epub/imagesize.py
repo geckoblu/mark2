@@ -394,6 +394,6 @@ def getDPI(filepath):
                         boxSize, = struct.unpack('>L', boxHeader[:4])
                         fhandle.seek(boxSize - 8, 1)
                         headerSize -= boxSize
-            except struct.error as e:
+            except struct.error:
                 raise ValueError("Invalid JPEG2000 file")
     return xDPI, yDPI

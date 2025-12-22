@@ -2,10 +2,13 @@
 """Main entry point for mark2 - a Markdown file converter."""
 
 import sys
+from typing import Sequence
 
 from mdit_py_plugins.footnote import footnote_plugin
 
 from markdown_it import MarkdownIt
+from markdown_it.renderer import Token
+from markdown_it.utils import EnvType, OptionsDict
 
 from mark2.args import get_env, parse_args
 from mark2.renderer import (
@@ -15,6 +18,32 @@ from mark2.renderer import (
     PDFRenderer,
     ReferenceHTMLRenderer,
 )
+
+
+def render_undefined(
+    self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType, name: str
+):
+    """Placeholder for undefined render rules.
+
+    This function is used when a render rule is expected but not implemented
+    in the current renderer. It returns an empty string to prevent errors.
+
+    Args:
+        self: Renderer instance
+        tokens: Token sequence
+        idx: Current token index
+        options: Parser options
+        env: Environment
+
+    Returns:
+        Empty string
+    """
+    token = tokens[idx]
+    print(
+        f"{name} {token.type}: tag={token.tag}, nesting={token.nesting}, attrs={token.attrs}, content='{token.content}'",  # pylint: disable=line-too-long
+        file=sys.stderr,
+    )
+    return ""
 
 
 def read_data(input_filename: str) -> str:
@@ -65,6 +94,14 @@ def set_footnote_plugin(md: MarkdownIt) -> None:
     for rule in footnote_rules:
         if hasattr(md.renderer, rule):
             md.add_render_rule(rule, getattr(md.renderer, rule))
+        else:
+            # Wrap partial in lambda to avoid AttributeError with __get__
+            md.add_render_rule(
+                rule,
+                lambda self, tokens, idx, options, env: render_undefined(
+                    self, tokens, idx, options, env, name="  [FOOTNOTE]"
+                ),
+            )
 
 
 def main() -> None:

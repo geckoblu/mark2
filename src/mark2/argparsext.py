@@ -42,7 +42,7 @@ class FileType:
                 __, ext = os.path.splitext(filename)
                 if ext.startswith("."):
                     ext = ext[1:]
-                if not ext.lower() in self._extension:
+                if ext.lower() not in self._extension:
                     if len(self._extension) == 1:
                         raise ArgumentTypeError(f"not a '{self._extension[0]}' file: '{string}'")
                     else:
