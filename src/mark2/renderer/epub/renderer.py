@@ -42,6 +42,8 @@ class EPUBRenderer(RendererHTML):
         self.guide = []  # Store guide entries for content.opf
         self.toc_entries = []  # Store (title, page_num) tuples
 
+        self.split_at_header = "h0"
+
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
         """Takes token stream and generates HTML.
 
@@ -64,6 +66,7 @@ class EPUBRenderer(RendererHTML):
         self.toc_entries = []  # Store (title, page_num) tuples
         epubuuid = uuid.uuid4()
         basename = Path(output_filename).stem
+        doctitle = basename
 
         pages = self.generate_content(tokens, options, env)
         toctxt = self.generate_toc()
@@ -89,10 +92,11 @@ class EPUBRenderer(RendererHTML):
                 # Add content
                 self.write_content(epub, pages)
                 # Add content.opf
-                self.write_content_opf(epub, basename, epubuuid)
+                self.write_content_opf(epub, doctitle, epubuuid)
                 # Add toc.ncx
                 epub.writestr(
-                    "OEBPS/toc.ncx", TOC_NCX % {"navpoints": toctxt, "epubuuid": epubuuid}
+                    "OEBPS/toc.ncx",
+                    TOC_NCX % {"title": doctitle, "navpoints": toctxt, "epubuuid": epubuuid},
                 )
                 # Add stylesheet
                 epub.writestr("OEBPS/Styles/stylesheet.css", stylesheet_content)
@@ -144,21 +148,22 @@ class EPUBRenderer(RendererHTML):
     ) -> list[str]:
         """Generate HTML content pages from tokens.
 
-        Splits tokens by h2 headings and extracts all heading levels for TOC generation.
+        Splits tokens by 'split_at_header headings and extracts all heading levels
+               for TOC generation.
 
         Args:
             tokens: List of markdown-it tokens
 
         Returns:
-            List of HTML page strings, one per h2 section
+            List of HTML page strings, one per 'split_at_header section
         """
 
-        # Split tokens by h2 headings and extract all headers
+        # Split tokens by 'split_at_header' headings and extract all headers
         chunks = []
         current_chunk = []
 
         for token in tokens:
-            if token.type == "heading_open" and token.tag == "h2":
+            if token.type == "heading_open" and token.tag == self.split_at_header:
                 if current_chunk:
                     chunks.append(current_chunk)
                     current_chunk = []
@@ -270,7 +275,7 @@ class EPUBRenderer(RendererHTML):
 
             # Add current navPoint
             indent = "    " * (len(stack) + 1)
-            navpoints += f"""{indent}<navPoint id="navpoint-{idx}" playOrder="{idx}">
+            navpoints += f"""{indent}<navPoint id="navPoint-{idx}" playOrder="{idx}">
 {indent}  <navLabel>
 {indent}    <text>{title}</text>
 {indent}  </navLabel>
@@ -290,42 +295,6 @@ class EPUBRenderer(RendererHTML):
     # Footnote plugin renderers
     ###########################################################################
 
-    # Helper methods (return values, used by other render rules)
-
-    def footnote_anchor_name(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> str:
-        """Generate footnote anchor ID.
-        The anchor name is used in HTML id and href attributes for linking."""
-        n = str(tokens[idx].meta["id"] + 1)
-        prefix = ""
-
-        doc_id = env.get("docId", None)
-        if isinstance(doc_id, str):
-            prefix = f"-{doc_id}-"
-
-        return prefix + n
-
-    def footnote_caption(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> str:
-        """Generate footnote caption text.
-        The caption is what's displayed to users (the visible number)."""
-        n = str(tokens[idx].meta["id"] + 1)
-
-        if tokens[idx].meta.get("subId", -1) > 0:
-            n += ":" + str(tokens[idx].meta["subId"])
-
-        return n
-
     # Token renderers
     def footnote_ref(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
@@ -340,17 +309,26 @@ class EPUBRenderer(RendererHTML):
             refid += ":" + str(tokens[idx].meta["subId"])
 
         ref = (
-            '<a href="#fn'
-            + ident
-            + '" id="fnref'
-            + refid
-            + '"><sup class="footnote-ref">'
-            + caption
-            + "</sup></a>"
+            f'<a href="#fn{ident}" id="fnref{refid}"><sup class="footnote-ref">{caption}</sup></a>'
         )
 
         # print(ref)
         return ref
+
+    def footnote_anchor(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render back-reference link at end of footnote."""
+        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
+        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
+
+        if tokens[idx].meta["subId"] > 0:
+            ident += ":" + str(tokens[idx].meta["subId"])
+
+        anchor = f'<a href="#fnref{ident}" id="fn{ident}" class="footnote-backref"><sup class="footnote-backref">{caption}</sup></a>'  # pylint: disable=line-too-long
+
+        # print(anchor)
+        return anchor
 
     def footnote_block_open(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
@@ -375,15 +353,3 @@ class EPUBRenderer(RendererHTML):
     ) -> str:
         """Render closing of individual footnote item."""
         return "</div>\n"
-
-    def footnote_anchor(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> str:
-        """Render back-reference link at end of footnote."""
-        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
-
-        if tokens[idx].meta["subId"] > 0:
-            ident += ":" + str(tokens[idx].meta["subId"])
-
-        # ↩ with escape code to prevent display as Apple Emoji on iOS
-        return ' <a href="#fnref' + ident + '" class="footnote-backref">\u21a9\ufe0e</a>'

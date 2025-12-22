@@ -13,3 +13,5 @@ Lorem ipsum dolor sit amet[^1]
 Stat rosa pristina nomine[^I.a]
 
 [^I.a]: This is a second note
+
+end of document.

@@ -5,11 +5,11 @@ from typing import Any, Sequence
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
-from mark2.renderer.base import Renderer
+from mark2.renderer.baserenderer import BaseRenderer
 from mark2.renderer.util import open_output
 
 
-class ConTeXtRenderer(Renderer):
+class ConTeXtRenderer(BaseRenderer):
     """A minimal ConTeXt renderer for markdown-it tokens."""
 
     __output__ = "text"

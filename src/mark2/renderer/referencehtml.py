@@ -18,10 +18,10 @@ from mdit_py_plugins.footnote.index import (
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
-from mark2.renderer.base import Renderer
+from mark2.renderer.baserenderer import BaseRenderer
 
 
-class ReferenceHTMLRenderer(Renderer):
+class ReferenceHTMLRenderer(BaseRenderer):
     """A reference HTML renderer that produces clean, semantic HTML."""
 
     __output__ = "html"

@@ -63,7 +63,7 @@ TOC_NCX = """<?xml version="1.0" encoding="utf-8"?>
     <meta name="dtb:maxPageNumber" content="0" />
   </head>
 <docTitle>
-  <text>Unknown</text>
+  <text>%(title)s</text>
 </docTitle>
 <navMap>
 %(navpoints)s</navMap>

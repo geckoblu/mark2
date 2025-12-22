@@ -8,7 +8,7 @@ from markdown_it.renderer import RendererProtocol, Token
 from markdown_it.utils import EnvType, OptionsDict
 
 
-class Renderer(RendererProtocol):
+class BaseRenderer(RendererProtocol):
     """Base class for all mark2 renderers."""
 
     def __init__(self, parser: Any = None):
@@ -359,22 +359,22 @@ class Renderer(RendererProtocol):
     # Footnote plugin renderers
     ###########################################################################
 
-    # Helper methods (return values, used by other render rules)
-    def footnote_anchor_name(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> str:
-        """Generate footnote anchor ID.
-        The anchor name is used in HTML id and href attributes for linking."""
-        # return render_footnote_anchor_name(self, tokens, idx, options, env)
-        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+    # # Helper methods (return values, used by other render rules)
+    # def footnote_anchor_name(
+    #     self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    # ) -> str:
+    #     """Generate footnote anchor ID.
+    #     The anchor name is used in HTML id and href attributes for linking."""
+    #     # return render_footnote_anchor_name(self, tokens, idx, options, env)
+    #     self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
 
-    def footnote_caption(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> str:
-        """Generate footnote caption text.
-        The caption is what's displayed to users (the visible number)."""
-        # return render_footnote_caption(self, tokens, idx, options, env)
-        self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+    # def footnote_caption(
+    #     self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    # ) -> str:
+    #     """Generate footnote caption text.
+    #     The caption is what's displayed to users (the visible number)."""
+    #     # return render_footnote_caption(self, tokens, idx, options, env)
+    #     self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
 
     # Token renderers
     def footnote_ref(
