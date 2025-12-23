@@ -40,7 +40,7 @@ class EPUBRenderer(RendererHTML):
         self.manifest = []  # Store (id, href, media-type) tuples
         self.spine = []  # Store itemref ids for content.opf
         self.guide = []  # Store guide entries for content.opf
-        self.toc_entries = []  # Store (title, page_num) tuples
+        self.toc_entries = []  # Store (title, page_num, level, toc_id) tuples for hierarchical TOC
 
         self.split_at_header = "h0"
 
@@ -63,7 +63,7 @@ class EPUBRenderer(RendererHTML):
         self.spine = []
         self.guide = []
 
-        self.toc_entries = []  # Store (title, page_num) tuples
+        self.toc_entries = []  # Store (title, page_num, level, toc_id)
         epubuuid = uuid.uuid4()
         basename = Path(output_filename).stem
         doctitle = basename
@@ -177,7 +177,8 @@ class EPUBRenderer(RendererHTML):
                 for next_token in tokens[tokens.index(token) :]:
                     if next_token.type == "inline":
                         title = next_token.content
-                        self.toc_entries.append((title, len(chunks) + 1, level))
+                        toc_id = token.attrGet("id") or ""
+                        self.toc_entries.append((title, len(chunks) + 1, level, toc_id))
                         break
                     if next_token.type == "heading_close":
                         break
@@ -252,9 +253,15 @@ class EPUBRenderer(RendererHTML):
     def generate_toc(self) -> str:
         """Generate TOC navpoints with hierarchical structure.
 
+        Creates a nested navigation structure for the EPUB table of contents based on
+        heading levels. If no TOC entries exist (document has no headings), returns
+        an empty string to generate a valid but empty TOC.
+
         Returns:
-            A string containing the navpoints for the TOC
+            A string containing the hierarchical navPoint XML elements for the NCX TOC.
+            Returns empty string if no headings were found in the document.
         """
+        # Return empty string if no headings were extracted from the document
         if not self.toc_entries:
             return ""
 
@@ -265,7 +272,7 @@ class EPUBRenderer(RendererHTML):
         navpoints = ""
         stack = []  # Stack to track open navPoints for nesting
 
-        for idx, (title, page_num, level) in enumerate(self.toc_entries, 1):
+        for idx, (title, page_num, level, toc_id) in enumerate(self.toc_entries, 1):
             page_num_str = str(page_num).zfill(num_digits)
 
             # Close navPoints that are at same or deeper level
@@ -279,7 +286,7 @@ class EPUBRenderer(RendererHTML):
 {indent}  <navLabel>
 {indent}    <text>{title}</text>
 {indent}  </navLabel>
-{indent}  <content src="page{page_num_str}.html"/>
+{indent}  <content src="page{page_num_str}.html#{toc_id}"/>
 """
             stack.append(level)
 

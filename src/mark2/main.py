@@ -16,7 +16,8 @@ from mark2.renderer import (
     PDFRenderer,
     ReferenceHTMLRenderer,
 )
-from mark2.plugins import footnoteplugin as mark2_footnoteplugin
+from mark2.plugins import footnote_plugin as mark2_footnote_plugin
+from mark2.plugins import headingsid_plugin as mark2_headingsid_plugin
 
 
 def read_data(input_filename: str) -> str:
@@ -44,17 +45,23 @@ def set_plugins(md: MarkdownIt) -> None:
     Returns:
         None
     """
+    set_headingsid_plugin(md)
     set_footnote_plugin(md)
+
+
+def set_headingsid_plugin(md: MarkdownIt) -> None:
+    """Set up the Headings ID plugin."""
+    md.use(mark2_headingsid_plugin.headingsid_plugin, min_level=1, max_level=6)
 
 
 def set_footnote_plugin(md: MarkdownIt) -> None:
     """Set up the Footnote plugin with custom render rules."""
     md.use(footnote_plugin, move_to_end=True)
 
-    md.core.ruler.at("footnote_tail", mark2_footnoteplugin.footnote_tail)
+    md.core.ruler.at("footnote_tail", mark2_footnote_plugin.footnote_tail)
     # helpers (only used in other rules, no tokens are attached to those)
-    md.add_render_rule("footnote_caption", mark2_footnoteplugin.render_footnote_caption)
-    md.add_render_rule("footnote_anchor_name", mark2_footnoteplugin.render_footnote_anchor_name)
+    md.add_render_rule("footnote_caption", mark2_footnote_plugin.render_footnote_caption)
+    md.add_render_rule("footnote_anchor_name", mark2_footnote_plugin.render_footnote_anchor_name)
 
     # Override Footnote plugin render rules with custom renderer methods if they exist
     footnote_rules = [
