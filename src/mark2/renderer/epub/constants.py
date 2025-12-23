@@ -2,7 +2,11 @@
 
 MIMETYPE = "application/epub+zip"
 
-DEFAULT_STYLESHEET = """p {
+DEFAULT_STYLESHEET = """h2 {
+	page-break-before: always;
+}
+
+p {
     margin: 0;
     text-align: justify;
     text-indent: 1em;
@@ -20,7 +24,7 @@ div.notes {
     margin-top: 2em;
 }
 
-p.note {
+div.note p {
     font-size: 0.8em;
     margin: 1em 1em 1em 2em;
     text-indent: -1em;
@@ -39,9 +43,7 @@ CONTENT_OPF = """<?xml version="1.0" encoding="utf-8"?>
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:identifier opf:scheme="UUID" id="BookId">urn:uuid:%(epubuuid)s</dc:identifier>
     <dc:title>%(title)s</dc:title>
-    <dc:language>it</dc:language>
-    <meta content="1.1.0" name="Sigil version" />
-    <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="modification">2024-02-21</dc:date>
+%(metadata)s
   </metadata>
   <manifest>
 %(manifest)s

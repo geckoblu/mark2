@@ -4,6 +4,7 @@
 import sys
 
 from mdit_py_plugins.footnote import footnote_plugin
+from mdit_py_plugins.front_matter import front_matter_plugin
 
 from markdown_it import MarkdownIt
 
@@ -45,6 +46,7 @@ def set_plugins(md: MarkdownIt) -> None:
     Returns:
         None
     """
+    md.use(front_matter_plugin)
     set_headingsid_plugin(md)
     set_footnote_plugin(md)
 

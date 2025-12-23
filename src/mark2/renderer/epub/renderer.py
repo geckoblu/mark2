@@ -1,17 +1,20 @@
 """EPUB renderer for converting Markdown to EPUB format."""
 
-from typing import Any, Sequence
-import uuid
-import zipfile
-import tempfile
+import html
 import shutil
 import sys
+import tempfile
+import uuid
+import zipfile
 from pathlib import Path
+from typing import Any, Sequence
 
+from markdown_it import MarkdownIt
 from markdown_it.renderer import RendererHTML
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
+from mark2.plugins.yaml_parser import parse_simple_yaml
 from mark2.renderer.epub.imagesize import get_image_size
 from mark2.renderer.epub.constants import (
     MIMETYPE,
@@ -65,8 +68,6 @@ class EPUBRenderer(RendererHTML):
 
         self.toc_entries = []  # Store (title, page_num, level, toc_id)
         epubuuid = uuid.uuid4()
-        basename = Path(output_filename).stem
-        doctitle = basename
 
         pages = self.generate_content(tokens, options, env)
         toctxt = self.generate_toc()
@@ -76,6 +77,8 @@ class EPUBRenderer(RendererHTML):
                 stylesheet_content = f.read()
         else:
             stylesheet_content = DEFAULT_STYLESHEET
+
+        doctitle, metadata = self.generate_metadata(env)
 
         # Write EPUB to a temporary file first
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".epub", delete=False) as tmp_file:
@@ -92,7 +95,7 @@ class EPUBRenderer(RendererHTML):
                 # Add content
                 self.write_content(epub, pages)
                 # Add content.opf
-                self.write_content_opf(epub, doctitle, epubuuid)
+                self.write_content_opf(epub, doctitle, epubuuid, metadata)
                 # Add toc.ncx
                 epub.writestr(
                     "OEBPS/toc.ncx",
@@ -189,9 +192,9 @@ class EPUBRenderer(RendererHTML):
         # Render each chunk
         pages = []
         for chunk in chunks:
-            html = super().render(chunk, options, env)
-            html = HTML_HEAD + html + HTML_TAIL
-            pages.append(html)
+            body = super().render(chunk, options, env)
+            body = HTML_HEAD + body + HTML_TAIL
+            pages.append(body)
 
         return pages
 
@@ -214,13 +217,16 @@ class EPUBRenderer(RendererHTML):
             self.spine.append(page_id)
             epub.writestr(f"OEBPS/{page_name}", page)
 
-    def write_content_opf(self, epub: zipfile.ZipFile, doctitle: str, epubuuid: uuid.UUID) -> None:
+    def write_content_opf(
+        self, epub: zipfile.ZipFile, doctitle: str, epubuuid: uuid.UUID, metadata: str
+    ) -> None:
         """Write the OPF (Open Packaging Format) file to the EPUB archive.
 
         Args:
             epub: ZipFile object representing the EPUB archive
-            title: Title of the EPUB
+            doctitle: Title of the EPUB
             epubuuid: Unique identifier for the EPUB
+            metadata: Additional metadata for the EPUB
         """
 
         manifest = "\n".join(
@@ -243,6 +249,7 @@ class EPUBRenderer(RendererHTML):
             CONTENT_OPF
             % {
                 "title": doctitle,
+                "metadata": metadata,
                 "manifest": manifest,
                 "spine": spine,
                 "guide": guide,
@@ -297,6 +304,90 @@ class EPUBRenderer(RendererHTML):
             navpoints += f"{indent}</navPoint>\n"
 
         return navpoints
+
+    def generate_metadata(self, env: EnvType) -> tuple[str, str]:
+        """Generate EPUB metadata from front matter.
+
+        Returns:
+            A tuple containing:
+            - The document title
+            - A string with additional metadata XML entries
+        """
+        frontmatter = env.get("front_matter", {})
+
+        doctitle = frontmatter.get("title", Path(env.get("output_filename", "-")).stem)
+
+        metadata_entries = []
+
+        # Author
+        if "author" in frontmatter:
+            author = frontmatter["author"]
+            parts = author.split()
+            if len(parts) == 2:
+                # Format: NAME SURNAME -> add opf:file-as="SURNAME, NAME"
+                file_as = f"{parts[1]}, {parts[0]}"
+                metadata_entries.append(
+                    f'    <dc:creator opf:role="aut" opf:file-as="{file_as}">{author}</dc:creator>'
+                )
+            else:
+                # No file-as attribute for non-standard name formats
+                metadata_entries.append(f'    <dc:creator opf:role="aut">{author}</dc:creator>')
+
+        # Language
+        language = frontmatter.get("language") or "it"
+        metadata_entries.append(f"    <dc:language>{language}</dc:language>")
+
+        # Publisher
+        if "publisher" in frontmatter:
+            metadata_entries.append(f'    <dc:publisher>{frontmatter["publisher"]}</dc:publisher>')
+
+        # Date
+        if "date" in frontmatter:
+            metadata_entries.append(
+                f'    <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="publication">{frontmatter["date"]}</dc:date>'  # pylint: disable=line-too-long
+            )
+        today = __import__("datetime").datetime.today().strftime("%Y-%m-%d")
+        metadata_entries.append(
+            f'    <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="modification">{today}</dc:date>'  # pylint: disable=line-too-long
+        )
+
+        # ID
+        if "id" in frontmatter:
+            id_value = frontmatter["id"]
+            # Split format like "ISBN<9788831550420>" into scheme and value
+            if "<" in id_value and ">" in id_value:
+                scheme = id_value.split("<")[0]
+                value = id_value.split("<")[1].rstrip(">")
+            else:
+                # Fallback to UUID scheme if format doesn't match
+                scheme = "UUID"
+                value = id_value
+            metadata_entries.append(
+                f'    <dc:identifier opf:scheme="{scheme}">{value}</dc:identifier>'  # pylint: disable=line-too-long
+            )
+
+        # Subject
+        if "subject" in frontmatter:
+            subjects: str = frontmatter["subject"]
+            for subject in subjects.split(","):
+                subject = subject.strip()
+                metadata_entries.append(f"    <dc:subject>{subject}</dc:subject>")
+
+        # Description
+        if "description" in frontmatter:
+            description: str = frontmatter["description"]
+            # Parse markdown and convert to HTML
+            md = MarkdownIt()
+            description = md.render(description).strip()
+            # Remove wrapping <p> tags if present
+            if description.startswith("<p>") and description.endswith("</p>"):
+                description = description[3:-4]
+            description = html.escape(description, quote=True)
+            metadata_entries.append(f"    <dc:description>{description}</dc:description>")
+
+        metadata_str = "\n".join(metadata_entries)
+
+        return doctitle, metadata_str
 
     ###########################################################################
     # Footnote plugin renderers
@@ -360,3 +451,15 @@ class EPUBRenderer(RendererHTML):
     ) -> str:
         """Render closing of individual footnote item."""
         return "</div>\n"
+
+    def front_matter(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Parse front matter block (not included in output)."""
+        token = tokens[idx]
+        # print(f"FRONT MATTER RENDERER CALLED: {token}", file=sys.stderr)
+
+        env["front_matter"] = parse_simple_yaml(token.content)
+        # print(env["front_matter"], file=sys.stderr)
+
+        return ""  # Front matter is not rendered in output
