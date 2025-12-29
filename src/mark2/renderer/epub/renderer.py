@@ -31,12 +31,20 @@ from mark2.renderer.epub.constants import (
 class EPUBRenderer(RendererHTML):
     """A minimal EPUB renderer for markdown-it tokens."""
 
-    # __output__ = "epub"
+    __output__: str = "epub"
+    manifest: list[tuple[str, str, str]]  # Store (id, href, media-type) tuples
+    spine: list[str]  # Store itemref ids for content.opf
+    guide: list[tuple[str, str, str]]  # Store guide entries for content.opf
+    toc_entries: list[tuple[str, int, int, str]]  # Store (title, page_num, level, toc_id)
+    split_at_header: str
 
-    def __init__(self, parser: Any = None):
+    def __init__(self, parser: Any = None) -> None:
         """Initialize the renderer.
 
         This renderer generates EPUB files from markdown-it tokens using HTML rendering.
+
+        Args:
+            parser: Optional parser instance
         """
         super().__init__(parser)
 
@@ -114,11 +122,12 @@ class EPUBRenderer(RendererHTML):
             # Clean up temporary file
             Path(tmp_path).unlink(missing_ok=True)
 
-    def write_cover(self, epub: zipfile.ZipFile, cover: str) -> None:
+    def write_cover(self, epub: zipfile.ZipFile, cover: str | None) -> None:
         """Write cover image to the EPUB archive if provided.
 
         Args:
             epub: ZipFile object representing the EPUB archive
+            cover: Path to the cover image file, or None if no cover
         """
         if cover is not None:
             cover_path = Path(cover)
@@ -151,14 +160,16 @@ class EPUBRenderer(RendererHTML):
     ) -> list[str]:
         """Generate HTML content pages from tokens.
 
-        Splits tokens by 'split_at_header headings and extracts all heading levels
-               for TOC generation.
+        Splits tokens by 'split_at_header' headings and extracts all heading levels
+        for TOC generation.
 
         Args:
             tokens: List of markdown-it tokens
+            options: Parser instance parameters
+            env: Additional data from parsed input
 
         Returns:
-            List of HTML page strings, one per 'split_at_header section
+            List of HTML page strings, one per 'split_at_header' section
         """
 
         # Split tokens by 'split_at_header' headings and extract all headers

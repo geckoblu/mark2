@@ -13,7 +13,7 @@ from markdown_it.utils import EnvType, OptionsDict
 
 def render_undefined(
     self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType, name: str
-):
+) -> str:
     """Placeholder for undefined render rules.
 
     This function is used when a render rule is expected but not implemented
@@ -25,6 +25,7 @@ def render_undefined(
         idx: Current token index
         options: Parser options
         env: Environment
+        name: Name of the undefined render rule for debugging
 
     Returns:
         Empty string

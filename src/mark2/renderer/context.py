@@ -12,10 +12,17 @@ from mark2.renderer.util import open_output
 class ConTeXtRenderer(BaseRenderer):
     """A minimal ConTeXt renderer for markdown-it tokens."""
 
-    __output__ = "text"
+    __output__: str = "text"
+    result: list[str]
+    in_link: bool
+    link_href: str
 
-    def __init__(self, parser: Any = None):
-        """Initialize the renderer."""
+    def __init__(self, parser: Any = None) -> None:
+        """Initialize the renderer.
+
+        Args:
+            parser: Optional parser instance
+        """
         super().__init__(parser)
 
         self.result = []
@@ -167,7 +174,7 @@ class ConTeXtRenderer(BaseRenderer):
     ) -> None:
         """Render opening link token."""
         token = tokens[idx]
-        self.link_href = self._get_attr(token, "href") or ""
+        self.link_href = token.attrGet("href") or ""
         self.in_link = True
         self.result.append("\\goto{")
 
@@ -234,8 +241,8 @@ class ConTeXtRenderer(BaseRenderer):
     def image(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
         """Render image token."""
         token = tokens[idx]
-        src = self._get_attr(token, "src") or ""
-        alt = self._get_attr(token, "alt") or ""
+        src = token.attrGet("src") or ""
+        alt = token.attrGet("alt") or ""
         # ConTeXt image inclusion
         self.result.append(f"\\externalfigure[{src}]")
         if alt:

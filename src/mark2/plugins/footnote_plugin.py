@@ -17,6 +17,9 @@ def footnote_tail(state: StateCore) -> None:
     """Post-processing step, to move footnote tokens to end of the token stream.
 
     Also removes un-referenced tokens.
+
+    Args:
+        state: The StateCore containing the token stream to process
     """
 
     insideRef = False

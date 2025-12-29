@@ -19,7 +19,7 @@ def configure_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
-    output_choices = ["html", "epub", "pdf", "tex"]
+    output_choices = ["html", "epub", "pdf", "tex", "md"]
 
     parser = argparse.ArgumentParser(
         description="Convert a Markdown file to various output formats.",

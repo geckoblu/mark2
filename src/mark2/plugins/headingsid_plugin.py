@@ -73,12 +73,12 @@ def _make_anchors_func(
     and adds unique ID attributes to heading elements within the specified levels.
 
     Args:
-        selected_levels: List of heading levels (1-6) to process.
-        use_title_based_ids: If True, use title-based slugs. If False, use alphanumeric IDs.
-        slug_func: Function to convert heading text to URL-safe slug.
+        selected_levels: List of heading levels (1-6) to process
+        use_title_based_ids: If True, use title-based slugs. If False, use alphanumeric IDs
+        slug_func: Function to convert heading text to URL-safe slug
 
     Returns:
-        A function that processes StateCore and adds IDs to heading tokens.
+        A function that processes StateCore and adds IDs to heading tokens
     """
 
     def _anchor_func(state: StateCore) -> None:

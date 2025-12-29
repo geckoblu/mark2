@@ -14,15 +14,24 @@ from mark2.renderer.context import ConTeXtRenderer
 
 
 class PDFRenderer(ConTeXtRenderer):
-    """A minimal PDF renderer for markdown-it tokens."""
+    """A minimal PDF renderer for markdown-it tokens.
+
+    This renderer extends ConTeXtRenderer to generate PDF output by first
+    creating a ConTeXt file and then compiling it to PDF using the context command.
+    """
+
+    __output__: str = "pdf"
 
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
-        """Takes token stream and generates output.
+        """Takes token stream and generates PDF output.
 
-        :param tokens: list on block tokens to render
-        :param options: params of parser instance
-        :param env: additional data from parsed input
+        Args:
+            tokens: List of block tokens to render
+            options: Parser instance parameters
+            env: Additional data from parsed input
 
+        Raises:
+            SystemExit: If ConTeXt compilation fails or context command is not found
         """
 
         output_filename = env.get("output_filename", "-")

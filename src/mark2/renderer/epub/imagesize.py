@@ -1,4 +1,9 @@
 # pylint: skip-file
+"""Image size detection utilities for EPUB cover images.
+
+This module provides functions to detect image dimensions from various
+image file formats, used for properly sizing cover images in EPUB files.
+"""
 # fmt: off
 # This file is a copy of https://github.com/shibukawa/imagesize_py
 #

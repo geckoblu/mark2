@@ -24,10 +24,17 @@ from mark2.renderer.baserenderer import BaseRenderer
 class ReferenceHTMLRenderer(BaseRenderer):
     """A reference HTML renderer that produces clean, semantic HTML."""
 
-    __output__ = "html"
+    __output__: str = "html"
+    result: list[str]
+    html: str
+    debug: bool
 
-    def __init__(self, parser: Any = None):
-        """Initialize the renderer."""
+    def __init__(self, parser: Any = None) -> None:
+        """Initialize the renderer.
+
+        Args:
+            parser: Optional parser instance
+        """
         super().__init__(parser)
 
         self.result = []
@@ -183,7 +190,7 @@ class ReferenceHTMLRenderer(BaseRenderer):
         if self.debug:
             self._debug_output(tokens, idx, options, env, "<ol>")
         token = tokens[idx]
-        start = self._get_attr(token, "start")
+        start = token.attrGet("start")
         if start and start != "1":
             self.result.append(f'<ol start="{start}">\n')
         else:
@@ -217,12 +224,12 @@ class ReferenceHTMLRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render opening link token."""
-        if self.debug:
-            href = self._get_attr(tokens[idx], "href") or ""
-            self._debug_output(tokens, idx, options, env, f"<a href='{href[:10]}'>")
         token = tokens[idx]
-        href = self._get_attr(token, "href") or ""
-        title = self._get_attr(token, "title")
+        if self.debug:
+            href = token.attrGet("href") or ""
+            self._debug_output(tokens, idx, options, env, f"<a href='{href[:10]}'>")
+        href = token.attrGet("href") or ""
+        title = token.attrGet("title")
         if title:
             self.result.append(
                 f'<a href="{self._escape_html(href)}" title="{self._escape_html(title)}">'
@@ -315,12 +322,12 @@ class ReferenceHTMLRenderer(BaseRenderer):
     def image(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
         """Render image token."""
         if self.debug:
-            src = self._get_attr(tokens[idx], "src") or ""
+            src = tokens[idx].attrGet("src") or ""
             self._debug_output(tokens, idx, options, env, f"<img src='{src[:10]}'>")
         token = tokens[idx]
-        src = self._get_attr(token, "src") or ""
-        alt = self._get_attr(token, "alt") or ""
-        title = self._get_attr(token, "title")
+        src = token.attrGet("src") or ""
+        alt = token.attrGet("alt") or ""
+        title = token.attrGet("title")
 
         self.result.append(f'<img src="{self._escape_html(src)}" alt="{self._escape_html(alt)}"')
         if title:
@@ -446,7 +453,7 @@ class ReferenceHTMLRenderer(BaseRenderer):
         if self.debug:
             self._debug_output(tokens, idx, options, env, "<th>")
         token = tokens[idx]
-        align = self._get_attr(token, "style")
+        align = token.attrGet("style")
         if align:
             self.result.append(f'<th style="{align}">')
         else:
@@ -467,7 +474,7 @@ class ReferenceHTMLRenderer(BaseRenderer):
         if self.debug:
             self._debug_output(tokens, idx, options, env, "<td>")
         token = tokens[idx]
-        align = self._get_attr(token, "style")
+        align = token.attrGet("style")
         if align:
             self.result.append(f'<td style="{align}">')
         else:

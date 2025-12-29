@@ -11,7 +11,7 @@ YAML parsing.
 """
 
 
-def parse_simple_yaml(text: str) -> dict[str, any]:
+def parse_simple_yaml(text: str, keep_multiline: bool = False) -> dict[str, any]:
     """Parse a simplified subset of YAML frontmatter.
 
     This parser supports:
@@ -22,6 +22,7 @@ def parse_simple_yaml(text: str) -> dict[str, any]:
 
     Args:
         text: The YAML text to parse.
+        keep_multiline: If True, preserve multi-line strings without block type processing.
 
     Returns:
         A dictionary containing the parsed key-value pairs. Values are
@@ -72,7 +73,7 @@ def parse_simple_yaml(text: str) -> dict[str, any]:
 
         # Handle multi-line strings (block scalars)
         if value in ("|", ">"):
-            i, value = parse_multi_line(lines, i, value)
+            i, value = parse_multi_line(lines, i, value, keep_multiline)
         else:
             # Single-line value: type coercion
             if value.lower() in ("true", "false"):
@@ -96,6 +97,7 @@ def parse_multi_line(
     lines: list[str],
     start_index: int,
     block_type: str,
+    keep_multiline: bool = False,
 ) -> tuple[int, str]:
     """Parse multi-line string values using YAML block scalars.
 
@@ -107,6 +109,7 @@ def parse_multi_line(
         lines: List of all lines in the YAML text.
         start_index: The index of the line containing the block scalar indicator.
         block_type: The block scalar style ('|' for literal, '>' for folded).
+        keep_multiline: If True, return the raw multi-line string without processing.
 
     Returns:
         A tuple containing:
@@ -117,6 +120,7 @@ def parse_multi_line(
         - Literal style (|) preserves all newlines
         - Folded style (>) joins lines with spaces, preserving empty line paragraph breaks
         - Indentation is automatically detected from the first non-empty content line
+        - When keep_multiline is True, the string is returned as-is without any processing
     """
     i = start_index + 1
 
@@ -144,12 +148,20 @@ def parse_multi_line(
             if current_indent < base_indent:
                 break  # Less indented, end of block
             # Remove base indentation
-            block_lines.append(current_line[base_indent:])
+            if keep_multiline:
+                block_lines.append(current_line)
+            else:
+                block_lines.append(current_line[base_indent:])
         else:
             # Empty line within block
             block_lines.append("")
 
         i += 1
+
+    # Return raw multi-line string if requested
+    if keep_multiline:
+        value = "\n".join(block_lines).rstrip()
+        return i, f"{block_type}\n{value}"
 
     # Process block based on type
     if block_type == "|":

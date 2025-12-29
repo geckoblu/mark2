@@ -11,19 +11,25 @@ from mark2.renderer.util import open_output
 
 
 class HTMLRenderer(RendererHTML):
-    """A minimal HTML renderer for markdown-it tokens."""
+    """A minimal HTML renderer for markdown-it tokens.
+
+    This renderer extends markdown-it's RendererHTML to add a complete HTML
+    document structure with header and footer.
+    """
+
+    __output__: str = "html"
 
     # def __init__(self, parser: Any = None):
     #     """Initialize the renderer."""
     #     super().__init__(parser)
 
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
-        """Takes token stream and generates HTML.
+        """Takes token stream and generates HTML with document structure.
 
-        :param tokens: list on block tokens to render
-        :param options: params of parser instance
-        :param env: additional data from parsed input
-
+        Args:
+            tokens: List of block tokens to render
+            options: Parser instance parameters
+            env: Additional data from parsed input
         """
         html = super().render(tokens, options, env)
 

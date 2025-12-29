@@ -1,4 +1,8 @@
-"""EPUB generation constants."""
+"""EPUB generation constants.
+
+This module contains all constants used for EPUB file generation,
+including XML templates, XHTML templates, and default stylesheets.
+"""
 
 MIMETYPE = "application/epub+zip"
 
@@ -13,7 +17,9 @@ p {
 }
 
 sup {
+    font-size: 0.75em;
     line-height: 0;
+    vertical-align: super;
 }
 
 a {

@@ -7,12 +7,21 @@ from typing import Any, Sequence
 from markdown_it.renderer import RendererProtocol, Token
 from markdown_it.utils import EnvType, OptionsDict
 
+from mark2.plugins.yaml_parser import parse_simple_yaml
+
 
 class BaseRenderer(RendererProtocol):
     """Base class for all mark2 renderers."""
 
-    def __init__(self, parser: Any = None):
-        """Initialize the renderer."""
+    __output__: str = "html"
+    rules: dict[str, Any]
+
+    def __init__(self, parser: Any = None) -> None:
+        """Initialize the renderer.
+
+        Args:
+            parser: Optional parser instance
+        """
         self.rules = {
             k: v
             for k, v in inspect.getmembers(self, predicate=inspect.ismethod)
@@ -81,33 +90,6 @@ class BaseRenderer(RendererProtocol):
             f"{name} {token.type}: tag={token.tag}, nesting={token.nesting}, attrs={token.attrs}, content='{token.content}'",  # pylint: disable=line-too-long
             file=sys.stderr,
         )
-
-    def _get_attr(self, token: Token, attr_name: str) -> str | None:
-        """Get attribute value from token.
-
-        Args:
-            token: The markdown-it token
-            attr_name: The name of the attribute
-
-        Returns:
-            The attribute value if found, None otherwise
-        """
-        if token.attrs:
-            for attr in token.attrs:
-                if attr[0] == attr_name:
-                    return attr[1]
-        return None
-
-    def _get_href(self, token: Token) -> str | None:
-        """Get href attribute from link token.
-
-        Args:
-            token: The markdown-it link token
-
-        Returns:
-            The href URL if found, None otherwise
-        """
-        return self._get_attr(token, "href")
 
     ###########################################################################
     # All the methods not starting with "render" nor "_" are rules renderers
@@ -359,24 +341,6 @@ class BaseRenderer(RendererProtocol):
     # Footnote plugin renderers
     ###########################################################################
 
-    # # Helper methods (return values, used by other render rules)
-    # def footnote_anchor_name(
-    #     self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    # ) -> str:
-    #     """Generate footnote anchor ID.
-    #     The anchor name is used in HTML id and href attributes for linking."""
-    #     # return render_footnote_anchor_name(self, tokens, idx, options, env)
-    #     self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
-
-    # def footnote_caption(
-    #     self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    # ) -> str:
-    #     """Generate footnote caption text.
-    #     The caption is what's displayed to users (the visible number)."""
-    #     # return render_footnote_caption(self, tokens, idx, options, env)
-    #     self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
-
-    # Token renderers
     def footnote_ref(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
@@ -424,3 +388,14 @@ class BaseRenderer(RendererProtocol):
     ) -> None:
         """Render closing of footnote reference item (in footnote block)."""
         self._debug(tokens, idx, options, env, name="  [FOOTNOTE]")
+
+    ###########################################################################
+    # Frontmatter plugin renderers
+    ###########################################################################
+
+    def front_matter(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Parse front matter block (not included in output)."""
+        token = tokens[idx]
+        env["front_matter"] = parse_simple_yaml(token.content)

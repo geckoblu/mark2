@@ -15,6 +15,7 @@ from mark2.renderer import (
     EPUBRenderer,
     HTMLRenderer,
     PDFRenderer,
+    MDRenderer,
     ReferenceHTMLRenderer,
 )
 from mark2.plugins import footnote_plugin as mark2_footnote_plugin
@@ -100,6 +101,10 @@ def main() -> None:
     if not args.quiet and args.output_filename != "-":
         print(f"Writing to   '{args.output_filename}'")
 
+    env = get_env(args)
+
+    data = read_data(args.input_filename)
+
     if args.reference_html:
         renderer_cls = ReferenceHTMLRenderer
     elif args.format == "html":
@@ -112,14 +117,12 @@ def main() -> None:
         renderer_cls = PDFRenderer
     elif args.format == "tex":
         renderer_cls = ConTeXtRenderer
+    elif args.format == "md":
+        renderer_cls = MDRenderer
     else:
         raise ValueError(f"Unsupported format: {args.format}")
 
-    env = get_env(args)
-
-    data = read_data(args.input_filename)
-
-    md = MarkdownIt(renderer_cls=renderer_cls)
+    md = MarkdownIt("commonmark", renderer_cls=renderer_cls)
     set_plugins(md)
 
     md.render(data, env=env)

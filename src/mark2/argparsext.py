@@ -8,6 +8,9 @@ from typing import Optional, Union
 class FileType:
     """Extended argparse FileType that checks file extensions."""
 
+    _mode: str
+    _extension: Optional[list[str]]
+
     def __init__(self, mode: str = "r", extension: Optional[Union[str, list[str]]] = None) -> None:
         """Initialize FileType with mode and optional extension filter.
 
