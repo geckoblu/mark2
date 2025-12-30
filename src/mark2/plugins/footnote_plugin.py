@@ -137,7 +137,19 @@ def render_footnote_anchor_name(
     env: EnvType,
 ) -> str:
     """Generate footnote anchor ID.
-    The anchor name is used in HTML id and href attributes for linking."""
+
+    The anchor name is used in HTML id and href attributes for linking.
+
+    Args:
+        self: Renderer protocol instance
+        tokens: Token sequence
+        idx: Current token index
+        options: Parser options
+        env: Environment dictionary
+
+    Returns:
+        Unique anchor ID string for the footnote
+    """
     n = str(tokens[idx].meta["id"] + 1)
     prefix = ""
 
@@ -156,7 +168,19 @@ def render_footnote_caption(
     env: EnvType,
 ) -> str:
     """Generate footnote caption text.
-    The caption is what's displayed to users (the visible number)."""
+
+    The caption is what's displayed to users (the visible number).
+
+    Args:
+        self: Renderer protocol instance
+        tokens: Token sequence
+        idx: Current token index
+        options: Parser options
+        env: Environment dictionary
+
+    Returns:
+        Caption string for the footnote (visible number)
+    """
     n = str(tokens[idx].meta["id"] + 1)
 
     if tokens[idx].meta.get("subId", -1) > 0:

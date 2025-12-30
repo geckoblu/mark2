@@ -6,7 +6,6 @@
 from pprint import pprint
 from markdown_it import MarkdownIt
 
-from mdrenderer import MDRenderer
 from xmlrenderer import XMLRenderer
 
 

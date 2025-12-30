@@ -44,7 +44,7 @@ class ReferenceHTMLRenderer(BaseRenderer):
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
         """Takes token stream and generates HTML output.
 
-        :param tokens: list on block tokens to render
+        :param tokens: list of block tokens to render
         :param options: params of parser instance
         :param env: additional data from parsed input
         """

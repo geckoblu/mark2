@@ -31,7 +31,7 @@ class BaseRenderer(RendererProtocol):
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
         """Takes token stream and generates output.
 
-        :param tokens: list on block tokens to render
+        :param tokens: list of block tokens to render
         :param options: params of parser instance
         :param env: additional data from parsed input
 
@@ -48,7 +48,7 @@ class BaseRenderer(RendererProtocol):
     def render_inline(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
         """The same as ``render``, but for single token of `inline` type.
 
-        :param tokens: list on block tokens to render
+        :param tokens: list of inline tokens to render
         :param options: params of parser instance
         :param env: additional data from parsed input (references, for example)
         """

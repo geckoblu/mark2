@@ -31,9 +31,9 @@ class ConTeXtRenderer(BaseRenderer):
         self.link_href = ""
 
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
-        """Takes token stream and generates output.
+        """Takes token stream and generates ConTeXt output.
 
-        :param tokens: list on block tokens to render
+        :param tokens: list of block tokens to render
         :param options: params of parser instance
         :param env: additional data from parsed input
 

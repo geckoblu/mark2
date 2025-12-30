@@ -40,12 +40,10 @@ def read_data(input_filename: str) -> str:
 
 
 def set_plugins(md: MarkdownIt) -> None:
-    """Set up plugins for the MarkdownIt parser based on command-line arguments.
+    """Set up plugins for the MarkdownIt parser.
 
     Args:
         md: MarkdownIt parser instance
-    Returns:
-        None
     """
     md.use(front_matter_plugin)
     set_headingsid_plugin(md)
@@ -53,12 +51,20 @@ def set_plugins(md: MarkdownIt) -> None:
 
 
 def set_headingsid_plugin(md: MarkdownIt) -> None:
-    """Set up the Headings ID plugin."""
+    """Set up the Headings ID plugin.
+
+    Args:
+        md: MarkdownIt parser instance
+    """
     md.use(mark2_headingsid_plugin.headingsid_plugin, min_level=1, max_level=6)
 
 
 def set_footnote_plugin(md: MarkdownIt) -> None:
-    """Set up the Footnote plugin with custom render rules."""
+    """Set up the Footnote plugin with custom render rules.
+
+    Args:
+        md: MarkdownIt parser instance
+    """
     md.use(footnote_plugin, move_to_end=True)
 
     md.core.ruler.at("footnote_tail", mark2_footnote_plugin.footnote_tail)

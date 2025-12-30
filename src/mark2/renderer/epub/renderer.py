@@ -31,12 +31,13 @@ from mark2.renderer.epub.constants import (
 class EPUBRenderer(RendererHTML):
     """A minimal EPUB renderer for markdown-it tokens."""
 
-    __output__: str = "epub"
     manifest: list[tuple[str, str, str]]  # Store (id, href, media-type) tuples
     spine: list[str]  # Store itemref ids for content.opf
     guide: list[tuple[str, str, str]]  # Store guide entries for content.opf
-    toc_entries: list[tuple[str, int, int, str]]  # Store (title, page_num, level, toc_id)
-    split_at_header: str
+    toc_entries: list[tuple[str, str, int, str]]  # Store (title, page_id, level, toc_id)
+    split_at_header: str  # Header tag to split content into separate pages
+    footnote_ref_pages: dict[str, str]  # Map footnote_id -> page_id
+    current_page_id: str  # Track the current page ID
 
     def __init__(self, parser: Any = None) -> None:
         """Initialize the renderer.
@@ -52,13 +53,14 @@ class EPUBRenderer(RendererHTML):
         self.spine = []  # Store itemref ids for content.opf
         self.guide = []  # Store guide entries for content.opf
         self.toc_entries = []  # Store (title, page_num, level, toc_id) tuples for hierarchical TOC
+        self.footnote_ref_pages = {}  # Track which page each footnote reference is on
 
-        self.split_at_header = "h0"
+        self.split_at_header = "h2"
 
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
-        """Takes token stream and generates HTML.
+        """Takes token stream and generates EPUB file.
 
-        :param tokens: list on block tokens to render
+        :param tokens: list of block tokens to render
         :param options: params of parser instance
         :param env: additional data from parsed input
 
@@ -66,6 +68,7 @@ class EPUBRenderer(RendererHTML):
         cover = env.get("epub_cover", None)
         stylesheet = env.get("epub_stylesheet", None)
         output_filename = env.get("output_filename", "-")
+        self.split_at_header = env.get("epub_split_at_header", "h2")
 
         self.manifest = []
         self.manifest.append(("ncx", "toc.ncx", "application/x-dtbncx+xml"))
@@ -75,6 +78,9 @@ class EPUBRenderer(RendererHTML):
         self.guide = []
 
         self.toc_entries = []  # Store (title, page_num, level, toc_id)
+        self.footnote_ref_pages = {}  # Map footnote_id -> page_id
+        self.current_page_id = ""  # Track the current page ID
+
         epubuuid = uuid.uuid4()
 
         pages = self.generate_content(tokens, options, env)
@@ -157,7 +163,7 @@ class EPUBRenderer(RendererHTML):
 
     def generate_content(
         self, tokens: list[Token], options: OptionsDict, env: EnvType
-    ) -> list[str]:
+    ) -> list[tuple[str, str]]:
         """Generate HTML content pages from tokens.
 
         Splits tokens by 'split_at_header' headings and extracts all heading levels
@@ -169,60 +175,116 @@ class EPUBRenderer(RendererHTML):
             env: Additional data from parsed input
 
         Returns:
-            List of HTML page strings, one per 'split_at_header' section
+            List of tuples (page_id, HTML content), one per 'split_at_header' section
         """
 
         # Split tokens by 'split_at_header' headings and extract all headers
         chunks = []
         current_chunk = []
 
+        num_digits = 3
+        page_number = 1
+        page_id = f"page{str(page_number).zfill(num_digits)}"
+
         for token in tokens:
             if token.type == "heading_open" and token.tag == self.split_at_header:
                 if current_chunk:
-                    chunks.append(current_chunk)
+                    chunks.append((page_id, current_chunk))
                     current_chunk = []
+                    page_number += 1
+                    page_id = f"page{str(page_number).zfill(num_digits)}"
+
+            if token.type == "footnote_block_open":
+                chunks.append((page_id, current_chunk))
+                current_chunk = []
+                page_number += 1
+                page_id = "notes"
+
+                self.create_notes_header(page_id, current_chunk)
 
             current_chunk.append(token)
 
             # Extract all heading levels for TOC
             if token.type == "heading_open" and token.tag.startswith("h"):
-                level = int(token.tag[1])  # Extract level from h1, h2, etc.
-                # Find the inline token that contains the heading text
-                for next_token in tokens[tokens.index(token) :]:
-                    if next_token.type == "inline":
-                        title = next_token.content
-                        toc_id = token.attrGet("id") or ""
-                        self.toc_entries.append((title, len(chunks) + 1, level, toc_id))
-                        break
-                    if next_token.type == "heading_close":
-                        break
+                self.add_header_to_toc(token, tokens, page_id)
 
         if current_chunk:
-            chunks.append(current_chunk)
+            chunks.append((page_id, current_chunk))
 
         # Render each chunk
         pages = []
-        for chunk in chunks:
+        for page_id, chunk in chunks:
+            self.current_page_id = page_id
             body = super().render(chunk, options, env)
+            body = body.replace("\xa0", "&#160;")
             body = HTML_HEAD + body + HTML_TAIL
-            pages.append(body)
+            pages.append((page_id, body))
 
         return pages
 
-    def write_content(self, epub: zipfile.ZipFile, pages: list[str]) -> None:
+    def add_header_to_toc(self, token: Token, tokens: Sequence[Token], page_id: str) -> None:
+        """Add a heading token to the table of contents entries.
+
+        Extracts the heading level, text content, and ID from the token and adds it
+        to the TOC entries list for later use in generating the EPUB navigation.
+
+        Args:
+            token: The heading_open token to process
+            tokens: Complete sequence of tokens to search for the heading text
+            page_id: Identifier of the page containing this heading
+
+        Returns:
+            None. Modifies self.toc_entries in place.
+        """
+        if token.type != "heading_open":
+            return
+
+        level = int(token.tag[1])  # Extract level from h1, h2, etc.
+        # Find the inline token that contains the heading text
+        for next_token in tokens[tokens.index(token) :]:
+            if next_token.type == "inline":
+                title = next_token.content
+                toc_id = token.attrGet("id") or ""
+                self.toc_entries.append((title, page_id, level, toc_id))
+                break
+            if next_token.type == "heading_close":
+                break
+
+    def create_notes_header(self, page_id: str, current_chunk: list[Token]) -> None:
+        """
+        Create a "Note" header section and add it to the table of contents.
+
+        This method generates heading tokens for a notes section, appends them to the
+        current chunk, and registers the header in the table of contents.
+
+        Args:
+            page_id (str): The identifier for the current page.
+            current_chunk (list): A list of tokens representing the current document chunk
+                                    to which the header tokens will be appended.
+
+        Returns:
+            None
+
+        Side Effects:
+            - Appends three tokens (heading_open, text, heading_close) to current_chunk
+            - Adds the header to the table of contents via add_header_to_toc
+        """
+        tk_open = Token(type="heading_open", tag="h2", nesting=1, attrs={"id": "toc_id_1"})
+        current_chunk.append(tk_open)
+        tk_content = Token(type="text", tag="", nesting=0, content="Note")
+        current_chunk.append(tk_content)
+        tk_close = Token(type="heading_close", tag="h2", nesting=-1)
+        current_chunk.append(tk_close)
+        self.add_header_to_toc(tk_open, current_chunk, page_id)
+
+    def write_content(self, epub: zipfile.ZipFile, pages: list[tuple[str, str]]) -> None:
         """Write content pages to the EPUB archive.
 
         Args:
             epub: ZipFile object representing the EPUB archive
-            pages: List of HTML page contents
+            pages: List of tuples containing (page_id, HTML content)
         """
-        # Calculate number of digits needed based on total pages
-        num_pages = len(pages)
-        num_digits = len(str(num_pages))
-
-        for i, page in enumerate(pages):
-            page_num = str(i + 1).zfill(num_digits)
-            page_id = f"page{page_num}"
+        for page_id, page in pages:
             page_name = f"{page_id}.html"
             self.manifest.append((page_id, page_name, "application/xhtml+xml"))
             self.spine.append(page_id)
@@ -283,15 +345,10 @@ class EPUBRenderer(RendererHTML):
         if not self.toc_entries:
             return ""
 
-        # Calculate number of digits needed for page numbers
-        max_page = max(entry[1] for entry in self.toc_entries)
-        num_digits = len(str(max_page))
-
         navpoints = ""
         stack = []  # Stack to track open navPoints for nesting
 
-        for idx, (title, page_num, level, toc_id) in enumerate(self.toc_entries, 1):
-            page_num_str = str(page_num).zfill(num_digits)
+        for idx, (title, page_id, level, toc_id) in enumerate(self.toc_entries, 1):
 
             # Close navPoints that are at same or deeper level
             while stack and stack[-1] >= level:
@@ -304,7 +361,7 @@ class EPUBRenderer(RendererHTML):
 {indent}  <navLabel>
 {indent}    <text>{title}</text>
 {indent}  </navLabel>
-{indent}  <content src="page{page_num_str}.html#{toc_id}"/>
+{indent}  <content src="{page_id}.html#{toc_id}"/>
 """
             stack.append(level)
 
@@ -318,6 +375,9 @@ class EPUBRenderer(RendererHTML):
 
     def generate_metadata(self, env: EnvType) -> tuple[str, str]:
         """Generate EPUB metadata from front matter.
+
+        Args:
+            env: Environment dictionary containing front matter and output settings
 
         Returns:
             A tuple containing:
@@ -409,16 +469,19 @@ class EPUBRenderer(RendererHTML):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> str:
         """Render footnote reference in the text."""
+        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
+
         ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
 
-        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
         refid = ident
-
         if tokens[idx].meta.get("subId", -1) > 0:
             refid += ":" + str(tokens[idx].meta["subId"])
 
+        self.footnote_ref_pages[refid] = self.current_page_id
+
         ref = (
-            f'<a href="#fn{ident}" id="fnref{refid}"><sup class="footnote-ref">{caption}</sup></a>'
+            f'<a href="notes.html#fn{ident}" id="fnref{refid}">'
+            + f'<sup class="footnote-ref">{caption}</sup></a>'
         )
 
         # print(ref)
@@ -428,15 +491,22 @@ class EPUBRenderer(RendererHTML):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> str:
         """Render back-reference link at end of footnote."""
-        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
         caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
 
-        if tokens[idx].meta["subId"] > 0:
-            ident += ":" + str(tokens[idx].meta["subId"])
+        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
 
-        anchor = f'<a href="#fnref{ident}" id="fn{ident}" class="footnote-backref"><sup class="footnote-backref">{caption}</sup></a>'  # pylint: disable=line-too-long
+        refid = ident
+        if tokens[idx].meta.get("subId", -1) > 0:
+            refid += ":" + str(tokens[idx].meta["subId"])
 
-        # print(anchor)
+        # Get the page_id where this footnote was referenced
+        page_id = self.footnote_ref_pages.get(refid, "---")
+
+        anchor = (
+            f'<a href="{page_id}.html#fnref{ident}" id="fn{ident}" class="footnote-backref">'
+            + f'<sup class="footnote-backref">{caption}</sup></a>&#160;'
+        )
+
         return anchor
 
     def footnote_block_open(
@@ -462,6 +532,10 @@ class EPUBRenderer(RendererHTML):
     ) -> str:
         """Render closing of individual footnote item."""
         return "</div>\n"
+
+    ###########################################################################
+    # Frontmatter plugin renderers
+    ###########################################################################
 
     def front_matter(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType

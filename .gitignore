@@ -15,3 +15,16 @@ README.log
 README.epub
 TEST.epub
 TEST.pdf
+eresia.md
+eresia_clean.md
+eresia_final.md
+eresia_fixed.md
+eresia_new.html
+eresia_new.md
+html_to_commonmark.py
+tests/assets/TEST-NOTES.html
+tests/assets/procl.html
+tests/assets/procl.md
+tests/assets/procl_new.md
+url_to_commonmark.py
+

@@ -13,5 +13,6 @@ __all__ = [
     "ConTeXtRenderer",
     "PDFRenderer",
     "EPUBRenderer",
+    "MDRenderer",
     "ReferenceHTMLRenderer",
 ]

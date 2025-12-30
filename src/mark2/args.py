@@ -64,6 +64,12 @@ def configure_parser() -> argparse.ArgumentParser:
         type=argparsext.FileType("r", extension=["css"]),
         help="stylesheet for epub",
     )
+    epub_group.add_argument(
+        "--epub-split-at-header",
+        choices=["h1", "h2", "h3", "h4", "h5", "h6"],
+        default="h2",
+        help="header level at which to split content into separate pages [default: %(default)s]",
+    )
 
     # html_group = parser.add_argument_group("HTML options")
     # html_group.add_argument("--html-css", help="CSS file to embed in HTML output")
@@ -111,6 +117,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--epub-cover is only valid with --format epub")
     if fmt != "epub" and args.epub_stylesheet:
         parser.error("--epub-stylesheet is only valid with --format epub")
+    if fmt != "epub" and args.epub_split_at_header != "h2":
+        parser.error("--epub-split-at-header is only valid with --format epub")
 
     # if fmt != "html" and args.html_css:
     #     parser.error("--html-css is only valid with --format html")
@@ -174,6 +182,7 @@ def get_env(args: argparse.Namespace) -> EnvType:
     if args.format == "epub":
         env["epub_cover"] = args.epub_cover
         env["epub_stylesheet"] = args.epub_stylesheet
+        env["epub_split_at_header"] = args.epub_split_at_header
 
     # if args.format == "html":
     #     env["html_css"] = args.html_css
