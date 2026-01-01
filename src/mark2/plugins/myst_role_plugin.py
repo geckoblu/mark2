@@ -29,7 +29,11 @@ def myst_role_plugin(md: MarkdownIt) -> None:
         md: MarkdownIt instance to register the plugin with
     """
     md.inline.ruler.before("backticks", "myst_role", myst_role)
-    md.add_render_rule("myst_role", render_myst_role)
+
+    if hasattr(md.renderer, "myst_role"):
+        md.add_render_rule("myst_role", md.renderer.myst_role)
+    else:
+        md.add_render_rule("myst_role", render_myst_role)
 
 
 def myst_role(state: StateInline, silent: bool) -> bool:
@@ -96,7 +100,7 @@ def myst_role(state: StateInline, silent: bool) -> bool:
 
 def render_myst_role(
     self: "RendererProtocol",
-    tokens: Sequence["Token"],
+    tokens: Sequence[Token],
     idx: int,
     options: "OptionsDict",
     env: "EnvType",

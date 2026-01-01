@@ -17,7 +17,12 @@ from markdown_it.utils import EnvType, OptionsDict
 def pagebreak_plugin(md: MarkdownIt) -> None:
     """Parse page breaks (``---``) in Markdown documents."""
     md.block.ruler.before("hr", "pagebreak", pagebreak_rule)
-    md.add_render_rule("pagebreak", render_pagebreak)
+
+    # Set renderer for pagebreak tokens
+    if hasattr(md.renderer, "pagebreak"):
+        md.add_render_rule("pagebreak", md.renderer.pagebreak)
+    else:
+        md.add_render_rule("pagebreak", render_pagebreak)
 
 
 def pagebreak_rule(state: StateBlock, startline: int, endline: int, silent: bool) -> bool:
@@ -75,7 +80,7 @@ def pagebreak_rule(state: StateBlock, startline: int, endline: int, silent: bool
 
 def render_pagebreak(
     self: RendererProtocol,
-    tokens: Sequence["Token"],
+    tokens: Sequence[Token],
     idx: int,
     options: OptionsDict,
     env: EnvType,

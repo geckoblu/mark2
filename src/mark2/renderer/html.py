@@ -1,5 +1,6 @@
 """HTML renderer for converting Markdown to HTML format."""
 
+import sys
 from typing import Sequence
 from pathlib import Path
 
@@ -127,6 +128,51 @@ class HTMLRenderer(RendererHTML):
         # print(env["front_matter"], file=sys.stderr)
 
         return ""  # Front matter is not rendered in output
+
+    ###########################################################################
+    # Pagebreak plugin renderer
+    ###########################################################################
+
+    def pagebreak(
+        self,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
+    ) -> str:
+        """Render a pagebreak token.
+
+        Args:
+            self: The renderer instance
+            tokens: List of all tokens being rendered
+            idx: Index of the current pagebreak token to render
+            options: Markdown-it parser options
+            env: Environment variables for rendering context
+
+        Returns:
+            Empty string (debug-only implementation that prints to stderr)
+        """
+        return "<hr/>"  # Simple horizontal rule for HTML output
+
+    ###########################################################################
+    # MyST role plugin renderer
+    ###########################################################################
+
+    def myst_role(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render MyST role (inline span)."""
+        token = tokens[idx]
+        name = token.meta.get("name", "unknown")
+        if name == "line-break":
+            return "<br/>"
+        else:
+            print(
+                "  [HTMLRenderer] no rendering for "
+                + f"{token.type}: name={name}, attrs={token.attrs}, content='{token.content}'",
+                file=sys.stderr,
+            )
+            return ""  # No output for other roles in HTML
 
 
 HTML_HEADER = """<!DOCTYPE html>

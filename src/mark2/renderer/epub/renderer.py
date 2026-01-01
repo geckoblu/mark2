@@ -253,6 +253,8 @@ class EPUBRenderer(RendererHTML):
         for next_token in tokens[tokens.index(token) :]:
             if next_token.type == "inline":
                 title = next_token.content
+                # TODO: Handle better way to strip {line-break} from title if needed
+                title = title.replace("{line-break}", " ").strip()
                 toc_id = token.attrGet("id") or ""
                 self.toc_entries.append((title, page_id, level, toc_id))
                 break
@@ -557,3 +559,23 @@ class EPUBRenderer(RendererHTML):
         # print(env["front_matter"], file=sys.stderr)
 
         return ""  # Front matter is not rendered in output
+
+    ###########################################################################
+    # MyST role plugin renderers
+    ###########################################################################
+
+    def myst_role(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render MyST role (inline span)."""
+        token = tokens[idx]
+        name = token.meta.get("name", "unknown")
+        if name == "line-break":
+            return "<br/>"
+        else:
+            print(
+                "  [EPUBRenderer] no rendering for "
+                + f"{token.type}: name={name}, attrs={token.attrs}, content='{token.content}'",
+                file=sys.stderr,
+            )
+            return ""  # No output for other roles in HTML
