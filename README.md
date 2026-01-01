@@ -130,7 +130,9 @@ python3 src/mark2/main.py input.md
 
 ## References
 
-- [markdown-it-py](https://github.com/executablebooks/markdown-it-py) - Python port of markdown-it
+- [Markdown-It-Py](https://markdown-it-py.readthedocs.io/en/latest/)
+- [Markdown-It-Py Plugin Extensions](https://mdit-py-plugins.readthedocs.io/en/latest/)
+- [markdown-it-py (source)](https://github.com/executablebooks/markdown-it-py) - Python port of markdown-it
 - [markdown-it](https://github.com/markdown-it/markdown-it) - Original JavaScript implementation
 - [MyST Markdown](https://mystmd.org/guide/quickstart-myst-markdown) - MyST quickstart guide (JavaScript)
 - [MyST Specification (myst-parser)](https://myst-parser.readthedocs.io/en/latest/syntax/typography.html) - Typography and syntax

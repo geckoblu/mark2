@@ -1,0 +1,112 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "mark2 HTML",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/mark2/main.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "-f",
+                "html",
+                "./tests/assets/TEST-NOTES.md",
+                "-o",
+                "-"
+            ]
+        },
+        {
+            "name": "mark2 ConTeXt",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/mark2/main.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "-f",
+                "tex",
+                "./README.md",
+                "-o",
+                "-"
+            ]
+        },
+        {
+            "name": "mark2 EPUB",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/mark2/main.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "./tests/assets/TEST-PAGEBREAK.md",
+                "-o",
+                "~/tmp",
+                "-f",
+                "epub"
+            ]
+        },
+        {
+            "name": "mark2 FRONTMATTER",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/mark2/main.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "./tests/assets/TEST-FRONTMATTER.md",
+                "-o",
+                "~/tmp/TEST-FRONTMATTER.epub"
+            ]
+        },
+        {
+            "name": "mark2 MARKDOWN",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/mark2/main.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "-f",
+                "md",
+                "./tests/assets/procl.md",
+            ]
+        },
+        {
+            "name": "mark2 --reference",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/mark2/main.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "--reference-html",
+                "./tests/assets/TEST-ROLE.md",
+                "-o",
+                "-",
+                "--debug"
+            ]
+        },
+    ]
+}

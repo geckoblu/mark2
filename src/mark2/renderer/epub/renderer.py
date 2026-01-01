@@ -22,6 +22,7 @@ from mark2.renderer.epub.constants import (
     COVER_XHTML,
     CONTENT_OPF,
     TOC_NCX,
+    EMPTY_TOC,
     HTML_HEAD,
     HTML_TAIL,
     DEFAULT_STYLESHEET,
@@ -187,6 +188,14 @@ class EPUBRenderer(RendererHTML):
         page_id = f"page{str(page_number).zfill(num_digits)}"
 
         for token in tokens:
+            if token.type == "pagebreak":
+                if current_chunk:
+                    chunks.append((page_id, current_chunk))
+                    current_chunk = []
+                    page_number += 1
+                    page_id = f"page{str(page_number).zfill(num_digits)}"
+                continue
+
             if token.type == "heading_open" and token.tag == self.split_at_header:
                 if current_chunk:
                     chunks.append((page_id, current_chunk))
@@ -341,9 +350,9 @@ class EPUBRenderer(RendererHTML):
             A string containing the hierarchical navPoint XML elements for the NCX TOC.
             Returns empty string if no headings were found in the document.
         """
-        # Return empty string if no headings were extracted from the document
+        # Return a default empty TOC if no headings were extracted from the document
         if not self.toc_entries:
-            return ""
+            return EMPTY_TOC
 
         navpoints = ""
         stack = []  # Stack to track open navPoints for nesting

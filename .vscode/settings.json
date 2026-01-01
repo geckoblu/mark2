@@ -1,0 +1,21 @@
+{
+    // Enable formatting on save
+    "editor.formatOnSave": true,
+    // Black formatter settings
+    "black-formatter.args": [
+        "--line-length=100"
+    ],
+    // Python-specific settings
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "always",
+            "source.fixAll": "explicit"
+        },
+        "editor.rulers": [
+            100
+        ]
+    },
+    "explorer.excludeGitIgnore": true
+}

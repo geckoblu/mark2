@@ -111,3 +111,10 @@ HTML_TAIL = """
 </body>
 </html>
 """
+
+EMPTY_TOC = """  <navPoint id="navPoint-1" playOrder="1">
+    <navLabel>
+      <text>Start</text>
+    </navLabel>
+    <content src="page001.html"/>
+  </navPoint>"""

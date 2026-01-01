@@ -6,6 +6,9 @@ import sys
 from mdit_py_plugins.footnote import footnote_plugin
 from mdit_py_plugins.front_matter import front_matter_plugin
 
+# from mdit_py_plugins.myst_role import myst_role_plugin
+# from mdit_py_plugins.myst_blocks import myst_block_plugin
+
 from markdown_it import MarkdownIt
 
 from mark2.__init__ import render_undefined
@@ -20,6 +23,8 @@ from mark2.renderer import (
 )
 from mark2.plugins import footnote_plugin as mark2_footnote_plugin
 from mark2.plugins import headingsid_plugin as mark2_headingsid_plugin
+from mark2.plugins import myst_role_plugin as mark2_myst_role_plugin
+from mark2.plugins.pagebreak_plugin import pagebreak_plugin
 
 
 def read_data(input_filename: str) -> str:
@@ -46,17 +51,11 @@ def set_plugins(md: MarkdownIt) -> None:
         md: MarkdownIt parser instance
     """
     md.use(front_matter_plugin)
-    set_headingsid_plugin(md)
-    set_footnote_plugin(md)
 
-
-def set_headingsid_plugin(md: MarkdownIt) -> None:
-    """Set up the Headings ID plugin.
-
-    Args:
-        md: MarkdownIt parser instance
-    """
     md.use(mark2_headingsid_plugin.headingsid_plugin, min_level=1, max_level=6)
+    md.use(mark2_myst_role_plugin.myst_role_plugin)
+    md.use(pagebreak_plugin)
+    set_footnote_plugin(md)
 
 
 def set_footnote_plugin(md: MarkdownIt) -> None:

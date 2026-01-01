@@ -46,7 +46,7 @@ def configure_parser() -> argparse.ArgumentParser:
         "-o",
         "--output-filename",
         metavar="OUTPUT_FILENAME",
-        type=argparsext.FileType("w", extension=output_choices),
+        type=argparsext.FileOrDirType("w", extension=output_choices),
         help="output file name (use '-' for stdout) [default: input name with format extension]",
     )
 
@@ -156,7 +156,22 @@ def parse_args() -> argparse.Namespace:
             __, ext = os.path.splitext(args.output_filename)
             if ext.startswith("."):
                 ext = ext[1:]
-            args.format = ext
+            if ext == "":
+                if args.format is None:
+                    parser.error(
+                        "output filename must have an extension"
+                        + " (or provide the format with --format)"
+                    )
+                else:
+                    basename, __ = os.path.splitext(os.path.basename(args.input_filename))
+                    args.output_filename = os.path.join(
+                        args.output_filename, f"{basename}.{args.format}"
+                    )
+                    if args.output_filename == args.input_filename:
+                        root, ext = os.path.splitext(args.output_filename)
+                        args.output_filename = f"{root}_new.{ext}"
+            else:
+                args.format = ext
 
     validate_args(args, parser)
 

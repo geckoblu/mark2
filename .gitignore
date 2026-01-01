@@ -2,10 +2,9 @@
 __pycache__/
 .pytest_cache/
 .ruff_cache/
-.vscode/
-doc/
-src/markdown_it/
+.venv/
 
+src/mark2/plugins/myst_block_plugin_original.py
 
 README.html
 README.tex
