@@ -231,6 +231,34 @@ class EPUBRenderer(RendererHTML):
 
         return pages
 
+    def extract_text_from_token(self, token: Token) -> str:
+        """Recursively extract plain text from a token and its children.
+
+        Walks through the token tree and concatenates all text content,
+        stripping out any formatting markup.
+
+        Args:
+            token: The token to extract text from
+
+        Returns:
+            Plain text content without formatting tags
+        """
+        text_parts = []
+
+        if token.type == "text":
+            text_parts.append(token.content)
+        elif token.type == "myst_role":
+            # Handle MyST roles if needed
+            name = token.meta.get("name")
+            if name == "line-break":
+                text_parts.append(" ")
+
+        if token.children:
+            for child in token.children:
+                text_parts.append(self.extract_text_from_token(child))
+
+        return "".join(text_parts)
+
     def add_header_to_toc(self, token: Token, tokens: Sequence[Token], page_id: str) -> None:
         """Add a heading token to the table of contents entries.
 
@@ -252,9 +280,7 @@ class EPUBRenderer(RendererHTML):
         # Find the inline token that contains the heading text
         for next_token in tokens[tokens.index(token) :]:
             if next_token.type == "inline":
-                title = next_token.content
-                # TODO: Handle better way to strip {line-break} from title if needed
-                title = title.replace("{line-break}", " ").strip()
+                title = self.extract_text_from_token(next_token)
                 toc_id = token.attrGet("id") or ""
                 self.toc_entries.append((title, page_id, level, toc_id))
                 break
@@ -277,13 +303,17 @@ class EPUBRenderer(RendererHTML):
             None
 
         Side Effects:
-            - Appends three tokens (heading_open, text, heading_close) to current_chunk
+            - Appends three tokens (heading_open, inline, heading_close) to current_chunk
             - Adds the header to the table of contents via add_header_to_toc
         """
         tk_open = Token(type="heading_open", tag="h2", nesting=1, attrs={"id": "toc_id_1"})
         current_chunk.append(tk_open)
-        tk_content = Token(type="text", tag="", nesting=0, content="Note")
-        current_chunk.append(tk_content)
+
+        # Create inline token with text as child, following markdown-it pattern
+        tk_text = Token(type="text", tag="", nesting=0, content="Note")
+        tk_inline = Token(type="inline", tag="", nesting=0, content="Note", children=[tk_text])
+        current_chunk.append(tk_inline)
+
         tk_close = Token(type="heading_close", tag="h2", nesting=-1)
         current_chunk.append(tk_close)
         self.add_header_to_toc(tk_open, current_chunk, page_id)
