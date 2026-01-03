@@ -130,6 +130,8 @@ python3 src/mark2/main.py input.md
 
 ## References
 
+- [CommonMark](https://commonmark.org/)
+- [CommonMark Spec](https://spec.commonmark.org/)
 - [Markdown-It-Py](https://markdown-it-py.readthedocs.io/en/latest/)
 - [Markdown-It-Py Plugin Extensions](https://mdit-py-plugins.readthedocs.io/en/latest/)
 - [markdown-it-py (source)](https://github.com/executablebooks/markdown-it-py) - Python port of markdown-it

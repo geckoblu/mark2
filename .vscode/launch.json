@@ -85,9 +85,11 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
             "args": [
+                "./tests/assets/TEST-LIST.md",
+                "-o",
+                "-",
                 "-f",
                 "md",
-                "./tests/assets/procl.md",
             ]
         },
         {
@@ -106,6 +108,32 @@
                 "-o",
                 "-",
                 "--debug"
+            ]
+        },
+        {
+            "name": "list_test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/list_test.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+        },
+        {
+            "name": "test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src:${workspaceFolder}/tests"
+            },
+            "args": [
+                "tests/mark2/renderer/test_md.py",
+                "-v"
             ]
         },
     ]

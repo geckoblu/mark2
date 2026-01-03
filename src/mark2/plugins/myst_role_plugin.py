@@ -37,7 +37,7 @@ def myst_role_plugin(md: MarkdownIt) -> None:
 
 
 def myst_role(state: StateInline, silent: bool) -> bool:
-    """Parse MyST role syntax {role-name}`content` or special {line-break} without content.
+    """Parse MyST role syntax {role-name}`content` or special ALLOWED_EMPTY_ROLES without content.
 
     Args:
         state: The inline parser state
