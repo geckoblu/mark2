@@ -210,7 +210,11 @@ class MDRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render soft line break token."""
-        self.result.append(" ")
+        word_wrap = env.get("md_word_wrap", "no")
+        if word_wrap == "keep":
+            self.result.append("\n")
+        else:
+            self.result.append(" ")
 
     def hr(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
         """Render soft line break token."""

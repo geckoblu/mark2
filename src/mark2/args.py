@@ -32,8 +32,6 @@ def configure_parser() -> argparse.ArgumentParser:
         help="input Markdown (.md) file to convert (use '-' for stdin)",
     )
 
-    # output_group = parser.add_mutually_exclusive_group()
-
     parser.add_argument(
         "-f",
         "--format",
@@ -71,15 +69,13 @@ def configure_parser() -> argparse.ArgumentParser:
         help="header level at which to split content into separate pages [default: %(default)s]",
     )
 
-    # html_group = parser.add_argument_group("HTML options")
-    # html_group.add_argument("--html-css", help="CSS file to embed in HTML output")
-
-    # pdf_group = parser.add_argument_group("PDF options")
-    # pdf_group.add_argument("--pdf-engine", choices=["weasyprint", "wkhtmltopdf"])
-    # pdf_group.add_argument("--pdf-margins", metavar="MM")
-
-    # tex_group = parser.add_argument_group("ConTeXt options")
-    # tex_group.add_argument("--tex-engine", choices=["xelatex", "lualatex"])
+    # MARKDOWN options ---------------------------
+    markdown_group = parser.add_argument_group("MARKDOWN options")
+    markdown_group.add_argument(
+        "--md-word-wrap",
+        choices=["no", "keep", "semantic"],
+        help="word wrap level for markdown output [default: no]",
+    )
 
     # Hidden/development options
     dev_group = parser.add_mutually_exclusive_group()
@@ -120,14 +116,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
     if fmt != "epub" and args.epub_split_at_header != "h2":
         parser.error("--epub-split-at-header is only valid with --format epub")
 
-    # if fmt != "html" and args.html_css:
-    #     parser.error("--html-css is only valid with --format html")
-
-    # if fmt != "pdf" and (args.pdf_engine or args.pdf_margins):
-    #     parser.error("--pdf-* options are only valid with --format pdf")
-
-    # if fmt != "tex" and args.tex_engine:
-    #     parser.error("--tex-engine is only valid with --format tex")
+    if fmt != "md" and args.md_word_wrap:
+        parser.error("--md-word-wrap is only valid with --format md")
 
 
 def parse_args() -> argparse.Namespace:
@@ -199,14 +189,9 @@ def get_env(args: argparse.Namespace) -> EnvType:
         env["epub_stylesheet"] = args.epub_stylesheet
         env["epub_split_at_header"] = args.epub_split_at_header
 
-    # if args.format == "html":
-    #     env["html_css"] = args.html_css
-
-    # if args.format == "pdf":
-    #     env["pdf_engine"] = args.pdf_engine
-    #     env["pdf_margins"] = args.pdf_margins
-
-    # if args.format == "tex":
-    #     env["tex_engine"] = args.tex_engine
+    if args.format == "md":
+        if args.md_word_wrap is None:
+            args.md_word_wrap = "no"
+        env["md_word_wrap"] = args.md_word_wrap
 
     return env

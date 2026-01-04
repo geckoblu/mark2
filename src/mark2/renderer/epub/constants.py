@@ -6,34 +6,41 @@ including XML templates, XHTML templates, and default stylesheets.
 
 MIMETYPE = "application/epub+zip"
 
-DEFAULT_STYLESHEET = """h2 {
+DEFAULT_STYLESHEET = """h1 {
+  text-indent: 0;
+	text-align: center;
+}
+
+h2 {
 	page-break-before: always;
+  text-indent: 0;
+	text-align: center;
 }
 
 p {
-    margin: 0;
-    text-align: justify;
-    text-indent: 1em;
+  margin: 0;
+  text-align: justify;
+  text-indent: 1em;
 }
 
 sup {
-    font-size: 0.75em;
-    line-height: 0;
-    vertical-align: super;
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: super;
 }
 
 a {
-    text-decoration: None;
+  text-decoration: None;
 }
 
 div.notes {
-    margin-top: 2em;
+  margin-top: 2em;
 }
 
 div.note p {
-    font-size: 0.8em;
-    margin: 1em 1em 1em 2em;
-    text-indent: -1em;
+  font-size: 0.8em;
+  margin: 1em 1em 1em 2em;
+  text-indent: -1em;
 }
 """
 
