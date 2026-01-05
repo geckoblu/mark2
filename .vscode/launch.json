@@ -17,7 +17,7 @@
             "args": [
                 "-f",
                 "html",
-                "./tests/assets/TEST-NOTES.md",
+                "./tests/assets/TEST-CONTAINER.md",
                 "-o",
                 "-"
             ]
