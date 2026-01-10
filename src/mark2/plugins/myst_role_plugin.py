@@ -16,7 +16,8 @@ from markdown_it.utils import EnvType, OptionsDict
 VALID_NAME_PATTERN = re.compile(r"^\{([a-zA-Z0-9\_\-\+\:]+)\}")
 
 # Set of roles that are allowed to have empty content
-ALLOWED_EMPTY_ROLES = {"line-break"}
+ALLOWED_EMPTY_ROLES = {"line-break", "br"}
+EMPTY_ROLES_ALIAS = {"br": "line-break"}
 
 
 def myst_role_plugin(md: MarkdownIt) -> None:
@@ -72,6 +73,8 @@ def myst_role(state: StateInline, silent: bool) -> bool:
     if tick_length == 0:
         # Special case: allow roles without any content or backticks if in allowed list
         if name in ALLOWED_EMPTY_ROLES:
+            # Normalize role name if it's an alias
+            name = EMPTY_ROLES_ALIAS.get(name, name)
             if not silent:
                 token = state.push("myst_role", "", 0)
                 token.meta = {"name": name}

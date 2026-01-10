@@ -6,4 +6,8 @@ __pycache__/
 
 src/mark2/plugins/myst_block_plugin_original.py
 
+tests/assets/TEST-CONTAINER.html
+tests/assets/TEST-DYNAMIC-CONTAINERS.md
+tests/assets/TEST-MULTIPLE-CONTAINERS.md
+tests/assets/TEST-NESTED-CONTAINERS.md
 
