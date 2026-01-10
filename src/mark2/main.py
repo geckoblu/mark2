@@ -9,7 +9,7 @@ from mdit_py_plugins.attrs import attrs_block_plugin
 
 
 # from mdit_py_plugins.myst_role import myst_role_plugin
-# from mdit_py_plugins.myst_blocks import myst_block_plugin
+from mdit_py_plugins.subscript import sub_plugin
 
 from markdown_it import MarkdownIt
 
@@ -26,8 +26,9 @@ from mark2.renderer import (
 from mark2.plugins import footnote_plugin as mark2_footnote_plugin
 from mark2.plugins import headingsid_plugin as mark2_headingsid_plugin
 from mark2.plugins import myst_role_plugin as mark2_myst_role_plugin
-from mark2.plugins.pagebreak_plugin import pagebreak_plugin
+from mark2.plugins.pagebreak_plugin import pagebreak_plugin as mark2_pagebreak_plugin
 from mark2.plugins.container_plugin import container_plugin as mark2_container_plugin
+from mark2.plugins.sup_plugin import sup_plugin as mark2_sup_plugin
 
 
 def read_data(input_filename: str) -> str:
@@ -57,10 +58,12 @@ def set_plugins(md: MarkdownIt) -> None:
     md.use(attrs_block_plugin)
     md.use(mark2_container_plugin)
     # mdit_py_plugins.attrs.attrs_block_plugin
+    md.use(sub_plugin)
+    md.use(mark2_sup_plugin)
 
     md.use(mark2_headingsid_plugin.headingsid_plugin, min_level=1, max_level=6)
     md.use(mark2_myst_role_plugin.myst_role_plugin)
-    md.use(pagebreak_plugin)
+    md.use(mark2_pagebreak_plugin)
     set_footnote_plugin(md)
 
 

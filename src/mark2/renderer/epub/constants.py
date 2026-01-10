@@ -13,7 +13,7 @@ DEFAULT_STYLESHEET = """h1 {
 
 h2 {
 	page-break-before: always;
-  text-indent: 0;
+	text-indent: 0;
 	text-align: center;
 }
 
@@ -41,6 +41,19 @@ div.note p {
   font-size: 0.8em;
   margin: 1em 1em 1em 2em;
   text-indent: -1em;
+}
+
+.center, div.center p {
+	text-indent: 0;
+	text-align: center;
+}
+
+.left, div.left p {
+	text-align: left;
+}
+
+.noindent, div.noident p {
+	text-indent: 0;
 }
 """
 
