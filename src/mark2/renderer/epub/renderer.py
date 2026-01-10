@@ -15,11 +15,13 @@ from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
 from mark2.plugins.yaml_parser import parse_simple_yaml
+from mark2.renderer.epub.generatecover import generate_cover as generatecover
 from mark2.renderer.epub.imagesize import get_image_size
 from mark2.renderer.epub.constants import (
     MIMETYPE,
     CONTAINER_XML,
     COVER_XHTML,
+    COVER_XHTML_GENERATED,
     CONTENT_OPF,
     TOC_NCX,
     EMPTY_TOC,
@@ -67,6 +69,7 @@ class EPUBRenderer(RendererHTML):
 
         """
         cover = env.get("epub_cover", None)
+        generate_cover = env.get("epub_generatecover", False)
         stylesheet = env.get("epub_stylesheet", None)
         output_filename = env.get("output_filename", "-")
         self.split_at_header = env.get("epub_split_at_header", "h2")
@@ -93,7 +96,7 @@ class EPUBRenderer(RendererHTML):
         else:
             stylesheet_content = DEFAULT_STYLESHEET
 
-        doctitle, metadata = self.generate_metadata(env)
+        doctitle, author, metadata = self.generate_metadata(env)
 
         # Write EPUB to a temporary file first
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".epub", delete=False) as tmp_file:
@@ -106,7 +109,10 @@ class EPUBRenderer(RendererHTML):
                 # Add META-INF/container.xml
                 epub.writestr("META-INF/container.xml", CONTAINER_XML)
                 # Add cover image if provided
-                self.write_cover(epub, cover)
+                if cover is not None:
+                    self.write_cover(epub, cover)
+                elif generate_cover:
+                    self.generate_cover(epub, doctitle, author)
                 # Add content
                 self.write_content(epub, pages)
                 # Add content.opf
@@ -161,6 +167,21 @@ class EPUBRenderer(RendererHTML):
                 )
                 self.manifest.append(("cover.xhtml", "cover.xhtml", "application/xhtml+xml"))
                 self.spine.insert(0, "cover.xhtml")
+
+    def generate_cover(self, epub: zipfile.ZipFile, doctitle, author: str) -> None:
+        """Generate a simple SVG cover page and add it to the EPUB archive.
+        Args:
+            epub: ZipFile object representing the EPUB archive
+            doctitle: Title of the EPUB
+            author: Author of the EPUB
+        """
+        svgcover = generatecover(doctitle, author)
+        epub.writestr(
+            "OEBPS/cover.xhtml",
+            COVER_XHTML_GENERATED % {"svgcover": svgcover},
+        )
+        self.manifest.append(("cover.xhtml", "cover.xhtml", "application/xhtml+xml"))
+        self.spine.insert(0, "cover.xhtml")
 
     def generate_content(
         self, tokens: list[Token], options: OptionsDict, env: EnvType
@@ -414,7 +435,7 @@ class EPUBRenderer(RendererHTML):
 
         return navpoints
 
-    def generate_metadata(self, env: EnvType) -> tuple[str, str]:
+    def generate_metadata(self, env: EnvType) -> tuple[str, str, str]:
         """Generate EPUB metadata from front matter.
 
         Args:
@@ -423,11 +444,13 @@ class EPUBRenderer(RendererHTML):
         Returns:
             A tuple containing:
             - The document title
+            - The author name
             - A string with additional metadata XML entries
         """
         frontmatter = env.get("front_matter", {})
 
         doctitle = frontmatter.get("title", Path(env.get("output_filename", "-")).stem)
+        author = ""
 
         metadata_entries = []
 
@@ -499,7 +522,7 @@ class EPUBRenderer(RendererHTML):
 
         metadata_str = "\n".join(metadata_entries)
 
-        return doctitle, metadata_str
+        return doctitle, author, metadata_str
 
     ###########################################################################
     # Footnote plugin renderers

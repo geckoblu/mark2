@@ -101,6 +101,21 @@ COVER_XHTML = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 </html>
 """
 
+COVER_XHTML_GENERATED = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Cover</title>
+</head>
+<body>
+  <div style="text-align: center; padding: 0pt; margin: 0pt;">
+%(svgcover)s
+  </div>
+</body>
+</html>
+"""
+
 HTML_HEAD = """<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE htmltxt PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
