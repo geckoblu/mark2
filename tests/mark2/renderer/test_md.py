@@ -2,7 +2,7 @@
 
 from mark2.renderer.md import MDRenderer
 
-from .util_for_test import render_str_output
+from tests.mark2.renderer.util import render_str_output
 
 
 class TestMDRenderer:

@@ -23,8 +23,14 @@ tests/
 ## Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (excluding spec tests)
 pytest tests/ -v
+
+# Run all tests including spec tests
+pytest tests/ -v --spec
+
+# Run only spec tests
+pytest -m spec -v
 
 # Run tests for a specific module
 pytest tests/odttools/parser/test_element.py -v
