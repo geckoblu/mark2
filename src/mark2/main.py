@@ -59,7 +59,6 @@ def set_plugins(md: MarkdownIt) -> None:
     md.use(front_matter_plugin)
     md.use(attrs_block_plugin)
     md.use(container_plugin)
-    # mdit_py_plugins.attrs.attrs_block_plugin
     md.use(sub_plugin)
     md.use(sup_plugin)
 

@@ -133,26 +133,26 @@ class HTMLRenderer(RendererHTML):
     # Pagebreak plugin renderer
     ###########################################################################
 
-    def pagebreak(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> str:
-        """Render a pagebreak token.
+    # def pagebreak(
+    #     self,
+    #     tokens: Sequence[Token],
+    #     idx: int,
+    #     options: OptionsDict,
+    #     env: EnvType,
+    # ) -> str:
+    #     """Render a pagebreak token.
 
-        Args:
-            self: The renderer instance
-            tokens: List of all tokens being rendered
-            idx: Index of the current pagebreak token to render
-            options: Markdown-it parser options
-            env: Environment variables for rendering context
+    #     Args:
+    #         self: The renderer instance
+    #         tokens: List of all tokens being rendered
+    #         idx: Index of the current pagebreak token to render
+    #         options: Markdown-it parser options
+    #         env: Environment variables for rendering context
 
-        Returns:
-            Empty string (debug-only implementation that prints to stderr)
-        """
-        return "<hr/>"  # Simple horizontal rule for HTML output
+    #     Returns:
+    #         Empty string (debug-only implementation that prints to stderr)
+    #     """
+    #     return "<hr/>"  # Simple horizontal rule for HTML output
 
     ###########################################################################
     # MyST role plugin renderer

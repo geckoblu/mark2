@@ -14,7 +14,6 @@ from markdown_it.renderer import RendererHTML
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
-from mark2.plugins.yaml_parser import parse_simple_yaml
 from mark2.renderer.epub.generatecover import generate_cover as generatecover
 from mark2.renderer.epub.imagesize import get_image_size
 from mark2.renderer.epub.constants import (
@@ -596,39 +595,3 @@ class EPUBRenderer(RendererHTML):
     ) -> str:
         """Render closing of individual footnote item."""
         return "</div>\n"
-
-    ###########################################################################
-    # Frontmatter plugin renderers
-    ###########################################################################
-
-    def front_matter(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> str:
-        """Parse front matter block (not included in output)."""
-        token = tokens[idx]
-        # print(f"FRONT MATTER RENDERER CALLED: {token}", file=sys.stderr)
-
-        env["front_matter"] = parse_simple_yaml(token.content)
-        # print(env["front_matter"], file=sys.stderr)
-
-        return ""  # Front matter is not rendered in output
-
-    ###########################################################################
-    # MyST role plugin renderers
-    ###########################################################################
-
-    def myst_role(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> str:
-        """Render MyST role (inline span)."""
-        token = tokens[idx]
-        name = token.meta.get("name", "unknown")
-        if name == "line-break":
-            return "<br/>"
-        else:
-            print(
-                "  [EPUBRenderer] no rendering for "
-                + f"{token.type}: name={name}, attrs={token.attrs}, content='{token.content}'",
-                file=sys.stderr,
-            )
-            return ""  # No output for other roles in HTML

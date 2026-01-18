@@ -6,6 +6,7 @@ from mark2.renderer.html import HTMLRenderer
 from mark2.renderer.pdf import PDFRenderer
 from mark2.renderer.md import MDRenderer
 from mark2.renderer.referencehtml import ReferenceHTMLRenderer
+from mark2.renderer.rendererhtml import RendererHTML
 
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "EPUBRenderer",
     "MDRenderer",
     "ReferenceHTMLRenderer",
+    "RendererHTML",
 ]

@@ -2,15 +2,9 @@
 with modifications to allow empty content roles."""
 
 import re
-import sys
-from typing import Sequence
 
 from markdown_it import MarkdownIt
-
-from markdown_it.renderer import RendererProtocol
 from markdown_it.rules_inline import StateInline
-from markdown_it.token import Token
-from markdown_it.utils import EnvType, OptionsDict
 
 # Matches role names like {role-name}, {abbr}, {line-break}, etc.
 VALID_NAME_PATTERN = re.compile(r"^\{([a-zA-Z0-9\_\-\+\:]+)\}")
@@ -30,11 +24,6 @@ def myst_role_plugin(md: MarkdownIt) -> None:
         md: MarkdownIt instance to register the plugin with
     """
     md.inline.ruler.before("backticks", "myst_role", myst_role)
-
-    if hasattr(md.renderer, "myst_role"):
-        md.add_render_rule("myst_role", md.renderer.myst_role)
-    else:
-        md.add_render_rule("myst_role", render_myst_role)
 
 
 def myst_role(state: StateInline, silent: bool) -> bool:
@@ -99,32 +88,3 @@ def myst_role(state: StateInline, silent: bool) -> bool:
     state.pos = pos + match.end() + 1
 
     return True
-
-
-def render_myst_role(
-    self: "RendererProtocol",
-    tokens: Sequence[Token],
-    idx: int,
-    options: "OptionsDict",
-    env: "EnvType",
-) -> str:
-    """Render a MyST role token (currently outputs debug info to stderr).
-
-    Args:
-        self: The renderer instance
-        tokens: List of all tokens
-        idx: Index of the current token to render
-        options: Markdown-it options
-        env: Environment for rendering
-
-    Returns:
-        Empty string (debug-only implementation)
-    """
-    token = tokens[idx]
-    name = token.meta.get("name", "unknown")
-
-    print(
-        f"  [MYST_ROLE] {token.type}: name={name}, attrs={token.attrs}, content='{token.content}'",
-        file=sys.stderr,
-    )
-    return ""

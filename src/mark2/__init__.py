@@ -10,6 +10,8 @@ from typing import Sequence
 from markdown_it.renderer import Token
 from markdown_it.utils import EnvType, OptionsDict
 
+from mark2 import renderer
+
 
 def render_undefined(
     self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType, name: str

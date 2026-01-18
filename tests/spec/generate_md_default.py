@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate pytest tests from spec.txt examples."""
+"""Generate pytest tests for markdown-to-markdown rendering from spec.txt examples."""
 
 import re
 from pathlib import Path
@@ -67,9 +67,12 @@ def escape_string(s):
     return repr(s)
 
 
-def generate_test_function(example_num, start_line, end_line, input_text, expected_output):
-    """Generate a pytest test function for an example."""
-    func_name = f"test_example{example_num}"
+def generate_test_function(example_num, start_line, end_line, input_text):
+    """Generate a pytest test function for a markdown example.
+
+    For markdown-to-markdown rendering, input and expected are the same.
+    """
+    func_name = f"test_md_example{example_num}"
 
     # Create a descriptive name from the input (first 50 chars, safe characters only)
     desc = input_text[:50].replace("\n", " ").replace("\t", " ")
@@ -79,23 +82,18 @@ def generate_test_function(example_num, start_line, end_line, input_text, expect
     else:
         desc = ""
 
-    # Don't add any newline - use the expected output exactly as parsed
-    # markdown-it.render() behavior varies: raw HTML passthrough has no \n,
-    # but generated HTML (like <p> tags) adds \n
-    expected_with_newline = expected_output
-
     return f'''@pytest.mark.spec
 def {func_name}():
-    """Test example {example_num}{desc}.
+    """Test markdown example {example_num}{desc}.
 
     Source: spec.txt lines {start_line}-{end_line}
     """
-    md = MarkdownIt()
+    md = MarkdownIt(renderer_cls=MDRenderer)
 
     input_text = {escape_string(input_text)}
-    expected = {escape_string(expected_with_newline)}
+    expected = {escape_string(input_text)}
 
-    result = md.render(input_text).rstrip('\\n')
+    result = render_str_output(md, input_text).rstrip('\\n')
     assert result == expected
 
 
@@ -106,14 +104,36 @@ def generate_test_file(examples, output_file):
     """Generate the complete test file."""
     header = '''# pylint: skip-file
 # fmt: off
-"""Test spec examples for default HTML rendering.
+"""Test spec examples for markdown-to-markdown rendering.
 
 This file is auto-generated from spec.txt.
-Run generate_test_default.py to regenerate.
+Run generate_md_default.py to regenerate.
 """
+
+import io
+from contextlib import redirect_stdout
 
 import pytest
 from markdown_it import MarkdownIt
+from mark2.renderer import MDRenderer
+
+
+def render_str_output(
+    md: MarkdownIt,
+    markdown_input: str,
+) -> str:
+    """Render markdown input using MarkdownIt instance and return the output string."""
+
+    # Capture stdout since render() writes to stdout when output is "-"
+    env = {"output_filename": "-"}
+    output_buffer = io.StringIO()
+    with redirect_stdout(output_buffer):
+        # Parse and render
+        md.render(markdown_input, env=env)
+
+    rendered_output = output_buffer.getvalue()
+
+    return rendered_output
 
 
 '''
@@ -122,26 +142,25 @@ from markdown_it import MarkdownIt
         f.write(header)
 
         for example_num, start_line, end_line, input_text, expected_output in examples:
-            test_func = generate_test_function(
-                example_num, start_line, end_line, input_text, expected_output
-            )
+            test_func = generate_test_function(example_num, start_line, end_line, input_text)
             f.write(test_func)
 
 
 def main():
-    """Generate pytest test file from spec.txt examples.
+    """Generate pytest test file for markdown-to-markdown rendering from spec.txt examples.
 
-    Parses spec.txt for markdown examples and generates test_default.py
+    Parses spec.txt for markdown examples and generates test_md.py
     with individual pytest test functions for each example.
+    For markdown rendering, input and expected are identical.
     """
     spec_file = Path(__file__).parent.parent / "spec.txt"
-    output_file = Path(__file__).parent / "test_default.py"
+    output_file = Path(__file__).parent / "test_md.py"
 
     print(f"Parsing examples from {spec_file}...")
     examples = parse_spec_examples(spec_file)
     print(f"Found {len(examples)} examples")
 
-    print(f"Generating tests to {output_file}...")
+    print(f"Generating markdown tests to {output_file}...")
     generate_test_file(examples, output_file)
     print("Done!")
 

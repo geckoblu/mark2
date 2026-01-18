@@ -4,14 +4,9 @@ Process ^superscript^ syntax.
 """
 
 import re
-import sys
-from typing import Sequence
 
 from markdown_it import MarkdownIt
-from markdown_it.renderer import RendererProtocol
 from markdown_it.rules_inline import StateInline
-from markdown_it.token import Token
-from markdown_it.utils import EnvType, OptionsDict
 
 # Same as UNESCAPE_MD_RE plus a space
 UNESCAPE_RE = re.compile(r'\\([ \\!"#$%&\'()*+,./:;<=>?@\[\]^_`{|}~-])')
@@ -24,14 +19,6 @@ def sup_plugin(md: MarkdownIt) -> None:
         md: MarkdownIt instance to register the plugin with
     """
     md.inline.ruler.after("emphasis", "sup", _superscript)
-
-    # Set renderer for sup_open tokens
-    if hasattr(md.renderer, "sup_open"):
-        md.add_render_rule("sup_open", md.renderer.sup_open)
-        md.add_render_rule("sup_close", md.renderer.sup_close)
-    else:
-        md.add_render_rule("sup_open", render_sup_open)
-        md.add_render_rule("sup_close", render_sup_close)
 
 
 def _superscript(state: StateInline, silent: bool = False) -> bool:
@@ -95,45 +82,3 @@ def _superscript(state: StateInline, silent: bool = False) -> bool:
     state.pos = state.posMax + 1
     state.posMax = max_pos
     return True
-
-
-def render_sup_open(
-    self: RendererProtocol,
-    tokens: Sequence[Token],
-    idx: int,
-    options: OptionsDict,
-    env: EnvType,
-) -> str:
-    """Render opening <sup> tag.
-
-    Returns:
-        The HTML string for opening <sup> tag
-    """
-    token = tokens[idx]
-    # Debug output to stderr
-    print(
-        f"  [SUP_OPEN] {token.type}: attrs={token.attrs}, content='{token.content}'",
-        file=sys.stderr,
-    )
-    return ""
-
-
-def render_sup_close(
-    self: RendererProtocol,
-    tokens: Sequence[Token],
-    idx: int,
-    options: OptionsDict,
-    env: EnvType,
-) -> str:
-    """Render closing </sup> tag.
-
-    Returns:
-        The HTML string for closing </sup> tag
-    """
-    token = tokens[idx]
-    # Debug output to stderr
-    print(
-        f"  [SUP_CLOSE] {token.type}: attrs={token.attrs}, content='{token.content}'",
-        file=sys.stderr,
-    )
-    return ""
