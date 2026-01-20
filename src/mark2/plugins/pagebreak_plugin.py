@@ -4,25 +4,13 @@ This plugin intercepts three-dash sequences (---) and transforms them into
 custom pagebreak tokens. Thematic breaks with asterisks (***) are not affected.
 """
 
-import sys
-from typing import Sequence
-
 from markdown_it import MarkdownIt
 from markdown_it.rules_block import StateBlock
-from markdown_it.renderer import RendererProtocol
-from markdown_it.token import Token
-from markdown_it.utils import EnvType, OptionsDict
 
 
 def pagebreak_plugin(md: MarkdownIt) -> None:
     """Parse page breaks (``---``) in Markdown documents."""
     md.block.ruler.before("hr", "pagebreak", pagebreak_rule)
-
-    # Set renderer for pagebreak tokens
-    if hasattr(md.renderer, "pagebreak"):
-        md.add_render_rule("pagebreak", md.renderer.pagebreak)
-    else:
-        md.add_render_rule("pagebreak", render_pagebreak)
 
 
 def pagebreak_rule(state: StateBlock, startline: int, endline: int, silent: bool) -> bool:
@@ -76,31 +64,3 @@ def pagebreak_rule(state: StateBlock, startline: int, endline: int, silent: bool
 
     state.line = startline + 1
     return True
-
-
-def render_pagebreak(
-    self: RendererProtocol,
-    tokens: Sequence[Token],
-    idx: int,
-    options: OptionsDict,
-    env: EnvType,
-) -> str:
-    """Render a pagebreak token.
-
-    Args:
-        self: The renderer instance
-        tokens: List of all tokens being rendered
-        idx: Index of the current pagebreak token to render
-        options: Markdown-it parser options
-        env: Environment variables for rendering context
-
-    Returns:
-        Empty string (debug-only implementation that prints to stderr)
-    """
-    token = tokens[idx]
-    # Debug output to stderr
-    print(
-        f"  [PAGEBREAK] {token.type}: attrs={token.attrs}, content='{token.content}'",
-        file=sys.stderr,
-    )
-    return ""

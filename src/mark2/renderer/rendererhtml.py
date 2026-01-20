@@ -50,6 +50,19 @@ class RendererHTML(markdown_it.renderer.RendererHTML):
         return "</sup>"
 
     ###########################################################################
+    # pagebreak_plugin renderers
+    ###########################################################################
+    def pagebreak(
+        self,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
+    ) -> str:
+        """Render page break as an HTML horizontal rule with class 'pagebreak'."""
+        return '<hr class="pagebreak" />\n'
+
+    ###########################################################################
     # myst_role_plugin renderers (with special handling).
     ###########################################################################
 
@@ -78,3 +91,66 @@ class RendererHTML(markdown_it.renderer.RendererHTML):
         env["front_matter"] = parse_simple_yaml(token.content)
 
         return ""  # Front matter is not rendered in output
+
+    ###########################################################################
+    # footnote_plugin renderers
+    ###########################################################################
+
+    # Token renderers
+    def footnote_ref(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render footnote reference in the text."""
+        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
+
+        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
+        refid = ident
+
+        if tokens[idx].meta.get("subId", -1) > 0:
+            refid += ":" + str(tokens[idx].meta["subId"])
+
+        ref = (
+            f'<a href="#fn{ident}" id="fnref{refid}"><sup class="footnote-ref">{caption}</sup></a>'
+        )
+
+        # print(ref)
+        return ref
+
+    def footnote_anchor(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render back-reference link at end of footnote."""
+        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
+        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
+
+        if tokens[idx].meta["subId"] > 0:
+            ident += ":" + str(tokens[idx].meta["subId"])
+
+        anchor = f'<a href="#fnref{ident}" id="fn{ident}" class="footnote-backref"><sup class="footnote-backref">{caption}</sup></a>&#160;'  # pylint: disable=line-too-long
+
+        # print(anchor)
+        return anchor
+
+    def footnote_block_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render opening of footnote block section."""
+        return '<div class="footnotes">\n'
+
+    def footnote_block_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render closing of footnote block section."""
+        return "</div>\n"
+
+    def footnote_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render opening of individual footnote item."""
+        return '<div class="footnote">\n'
+
+    def footnote_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render closing of individual footnote item."""
+        return "</div>\n"
