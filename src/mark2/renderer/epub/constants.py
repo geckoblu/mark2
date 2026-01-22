@@ -33,11 +33,11 @@ a {
   text-decoration: None;
 }
 
-div.notes {
+div.footnotes {
   margin-top: 2em;
 }
 
-div.note p {
+div.footnote p {
   font-size: 0.8em;
   margin: 1em 1em 1em 2em;
   text-indent: -1em;

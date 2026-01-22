@@ -101,11 +101,11 @@ class RendererHTML(markdown_it.renderer.RendererHTML):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> str:
         """Render footnote reference in the text."""
+        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
+
         ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
 
-        caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
         refid = ident
-
         if tokens[idx].meta.get("subId", -1) > 0:
             refid += ":" + str(tokens[idx].meta["subId"])
 
@@ -120,8 +120,9 @@ class RendererHTML(markdown_it.renderer.RendererHTML):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> str:
         """Render back-reference link at end of footnote."""
-        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
         caption: str = self.rules["footnote_caption"](tokens, idx, options, env)
+
+        ident: str = self.rules["footnote_anchor_name"](tokens, idx, options, env)
 
         if tokens[idx].meta["subId"] > 0:
             ident += ":" + str(tokens[idx].meta["subId"])
