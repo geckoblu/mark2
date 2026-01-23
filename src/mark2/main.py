@@ -96,14 +96,14 @@ def set_footnote_plugin(md: MarkdownIt) -> None:
     for rule in footnote_rules:
         if hasattr(md.renderer, rule):
             md.add_render_rule(rule, getattr(md.renderer, rule))
-        else:
-            # Wrap partial in lambda to avoid AttributeError with __get__
-            md.add_render_rule(
-                rule,
-                lambda self, tokens, idx, options, env: render_undefined(
-                    self, tokens, idx, options, env, name="  [FOOTNOTE NOT IMPLEMENTED]"
-                ),
-            )
+        # else:
+        #     # Wrap partial in lambda to avoid AttributeError with __get__
+        #     md.add_render_rule(
+        #         rule,
+        #         lambda self, tokens, idx, options, env: render_undefined(
+        #             self, tokens, idx, options, env, name="  [FOOTNOTE NOT IMPLEMENTED]"
+        #         ),
+        #     )
 
 
 def main() -> None:
