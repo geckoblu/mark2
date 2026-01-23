@@ -1,24 +1,23 @@
-"""Superscript plugin for markdown-it-py.
+"""
+Markdown-it-py plugin to introduce <sup> markup using ^superscript^.
 
-Process ^superscript^ syntax.
+Ported from
+https://github.com/markdown-it/markdown-it-sup/blob/master/index.mjs
 """
 
+from collections.abc import Sequence
 import re
 
 from markdown_it import MarkdownIt
+from markdown_it.renderer import RendererProtocol
 from markdown_it.rules_inline import StateInline
+from markdown_it.token import Token
+from markdown_it.utils import EnvType, OptionsDict
+
+__all__ = ["sup_plugin"]
 
 # Same as UNESCAPE_MD_RE plus a space
 UNESCAPE_RE = re.compile(r'\\([ \\!"#$%&\'()*+,./:;<=>?@\[\]^_`{|}~-])')
-
-
-def sup_plugin(md: MarkdownIt) -> None:
-    """Register superscript parser with MarkdownIt.
-
-    Args:
-        md: MarkdownIt instance to register the plugin with
-    """
-    md.inline.ruler.after("emphasis", "sup", _superscript)
 
 
 def _superscript(state: StateInline, silent: bool = False) -> bool:
@@ -82,3 +81,37 @@ def _superscript(state: StateInline, silent: bool = False) -> bool:
     state.pos = state.posMax + 1
     state.posMax = max_pos
     return True
+
+
+def sup_open(
+    renderer: RendererProtocol,
+    tokens: Sequence[Token],
+    idx: int,
+    options: OptionsDict,
+    env: EnvType,
+) -> str:
+    """Render the opening tag for a ^superscript^ token."""
+    return "<sup>"
+
+
+def sup_close(
+    renderer: RendererProtocol,
+    tokens: Sequence[Token],
+    idx: int,
+    options: OptionsDict,
+    env: EnvType,
+) -> str:
+    """Render the closing tag for a ^superscript^ token."""
+    return "</sup>"
+
+
+def sup_plugin(md: MarkdownIt) -> None:
+    """
+    Markdown-it-py plugin to introduce <sup> markup using ^superscript^.
+
+    Ported from
+    https://github.com/markdown-it/markdown-it-sup/blob/master/index.mjs
+    """
+    md.inline.ruler.after("emphasis", "sup", _superscript)
+    md.add_render_rule("sup_open", sup_open)
+    md.add_render_rule("sup_close", sup_close)

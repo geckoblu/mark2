@@ -103,11 +103,8 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
             "args": [
-                "--reference-html",
-                "./tests/assets/TEST-ROLE.md",
-                "-o",
-                "-",
-                "--debug"
+                "--reference",
+                "./tests/assets/TEST-NOTES2.md",
             ]
         },
         {

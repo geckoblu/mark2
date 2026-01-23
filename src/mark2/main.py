@@ -13,7 +13,6 @@ from mdit_py_plugins.subscript import sub_plugin
 
 from markdown_it import MarkdownIt
 
-from mark2.__init__ import render_undefined
 from mark2.args import get_env, parse_args
 from mark2.renderer import (
     ConTeXtRenderer,

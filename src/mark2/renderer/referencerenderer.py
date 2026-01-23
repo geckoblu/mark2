@@ -3,31 +3,16 @@
 import sys
 from typing import Any, Sequence
 
-# Import Footnote render functions
-from mdit_py_plugins.footnote.index import (
-    render_footnote_anchor,
-    render_footnote_anchor_name,
-    render_footnote_block_close,
-    render_footnote_block_open,
-    render_footnote_caption,
-    render_footnote_close,
-    render_footnote_open,
-    render_footnote_ref,
-)
 
-from markdown_it.token import Token
+from markdown_it.renderer import RendererProtocol, Token
 from markdown_it.utils import EnvType, OptionsDict
 
-from mark2.renderer.baserenderer import BaseRenderer
 
-
-class ReferenceRenderer(BaseRenderer):
-    """A reference HTML renderer that produces clean, semantic HTML."""
+class ReferenceRenderer(RendererProtocol):
+    """Reference renderer that outputs token stream structure for debugging."""
 
     __output__: str = "html"
-    result: list[str]
-    html: str
-    debug: bool
+    rules: dict[str, Any]
 
     def __init__(self, parser: Any = None) -> None:
         """Initialize the renderer.
@@ -37,55 +22,108 @@ class ReferenceRenderer(BaseRenderer):
         """
         super().__init__(parser)
 
-        self.result = []
-        self.html = ""
-        self.debug = False
+        self.rules = {}
+        self.column_lengths = {}
 
-    def render_token(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> None:
-        """Default token renderer."""
-        self._debug_output(tokens, idx, options, env)
+    def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
+        """Takes token stream and generates output.
 
-    def _debug_output(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> None:
-        """Print debug output in a single line with fixed width formatting.
+        :param tokens: list of block tokens to render
+        :param options: params of parser instance
+        :param env: additional data from parsed input
 
-        Args:
-            tokens: Token sequence
-            idx: Current token index
-            options: Parser options
-            env: Environment
-            output: The HTML output to display (max 20 chars)
         """
-        token = tokens[idx]
-        # Create the first part (25 chars max)
-        first_part = f"[TOKEN {token.type}"
-        first_part = first_part.ljust(23) + "]:"
-        # Truncate if too long and pad to 25 chars
-        if len(first_part) > 25:
-            first_part = first_part[:22] + "..."
+        self.print_renderer_rules()
 
-        # Create the second part (50 chars max)
-        second_part = f"tag={token.tag}, nesting={token.nesting}, attrs={token.attrs}"
-        second_part = second_part.replace(", ", ",\t")  # Replace comma+space with comma+tab
-        second_part = second_part.ljust(50)
-        # Truncate if too long and pad to 50 chars
-        if len(second_part) > 50:
-            second_part = second_part[:47] + "..."
+        # First pass: calculate column widths
+        self.column_lengths = {
+            "type": 0,
+            "tag": 0,
+            "nesting": 0,
+            "attrs": 0,
+        }
+        self._calculate_column_widths(tokens, 0)
 
-        # Second part (40 chars max)
-        tirth_part = token.content.replace("\n", "↩").replace("\r", "↩")  # Escape newlines
-        if len(tirth_part) > 50:
-            tirth_part = tirth_part[:47] + "..."
+        # Second pass: print with calculated widths
+        self._render_tokens(tokens, 0)
 
-        print(f"{first_part}  {second_part}  {tirth_part}", file=sys.stderr)
+    def _render_tokens(self, tokens: Sequence[Token], indent_level: int) -> None:
+        """Render tokens with proper indentation and column widths."""
+        for token in tokens:
+            self._output_token(token, indent_level)
+            if token.children:
+                self._render_tokens(token.children, indent_level + 1)
+
+    def _calculate_column_widths(self, tokens: Sequence[Token], indent_level: int) -> None:
+        """Calculate maximum column widths for token display."""
+        for token in tokens:
+            self.get_column_widths(token, indent_level)
+            if token.children:
+                self._calculate_column_widths(token.children, indent_level + 1)
+
+    def get_column_widths(self, token, indent_level: int) -> None:
+        """Update column widths based on the given token."""
+        self.column_lengths["type"] = max(
+            self.column_lengths["type"], len(token.type) + indent_level * 2
+        )
+        self.column_lengths["tag"] = max(self.column_lengths["tag"], len(str(token.tag)))
+        self.column_lengths["nesting"] = max(
+            self.column_lengths["nesting"], len(str(token.nesting))
+        )
+        self.column_lengths["attrs"] = max(self.column_lengths["attrs"], len(str(token.attrs)))
+
+    def _output_token(self, token: Token, indent_level: int) -> None:
+        """Output a single token with proper indentation and column widths."""
+        indent = "  " * indent_level
+        type_ = f"{indent}{str(token.type)}".ljust(self.column_lengths["type"])
+        tag = f"{str(token.tag)},".ljust(self.column_lengths["tag"] + 1)
+        nesting = f"{str(token.nesting)},".rjust(self.column_lengths["nesting"] + 1)
+        attrs = f"{str(token.attrs)},".ljust(self.column_lengths["attrs"] + 1)
+        content = token.content.replace("\n", "↩").replace("\r", "↩")  # Escape newlines
+
+        line = f"{type_} : tag={tag} nesting={nesting} attrs={attrs}" + f" content='{content}'"
+        if len(line) > 175:
+            line = line[:171] + "...'"
+
+        print(
+            line,
+            file=sys.stderr,
+        )
+
+    def print_renderer_rules(self) -> None:
+        """Print all renderer rules defined outside this class."""
+        # TO_SKIP = {}
+
+        lines = []
+        # Get all class names in the renderer's MRO (method resolution order)
+        renderer_class_names = {cls.__name__ for cls in self.__class__.__mro__}
+
+        for rule_name, method in self.rules.items():
+            original = method.__func__
+
+            # Extract class name from __qualname__
+            class_name = (
+                original.__qualname__.rsplit(".", 1)[0] if "." in original.__qualname__ else None
+            )
+
+            # Skip methods defined in the renderer class itself or inherited from parent classes
+            if class_name in renderer_class_names:
+                continue
+
+            first_part = f"{original.__module__}.{original.__qualname__}"
+            # Skip specific known methods
+            # if first_part in TO_SKIP:
+            #     continue
+
+            # Truncate if too long and pad to 80 chars
+            if len(first_part) > 80:
+                first_part = first_part[:77] + "..."
+            first_part = first_part.ljust(80)
+
+            rule_name = rule_name.ljust(30)
+            lines.append(rule_name + " " + first_part)
+
+        print("---", file=sys.stderr)
+        for line in sorted(lines):
+            print(line, file=sys.stderr)
+        print("---", file=sys.stderr)

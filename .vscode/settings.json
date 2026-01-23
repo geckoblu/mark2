@@ -1,6 +1,8 @@
 {
     // Enable formatting on save
     "editor.formatOnSave": true,
+    // Use system Python instead of virtual environment
+    "python.defaultInterpreterPath": "/usr/bin/python3",
     // Black formatter settings
     "black-formatter.args": [
         "--line-length=100"

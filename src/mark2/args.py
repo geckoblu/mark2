@@ -134,6 +134,9 @@ def parse_args() -> argparse.Namespace:
     parser = configure_parser()
     args = parser.parse_args()
 
+    if args.reference:
+        args.output_filename = "-"
+
     # Determine output filename
     if args.output_filename is None:
         if args.input_filename == "-":

@@ -4,13 +4,18 @@ This plugin intercepts three-dash sequences (---) and transforms them into
 custom pagebreak tokens. Thematic breaks with asterisks (***) are not affected.
 """
 
+from collections.abc import Sequence
+
 from markdown_it import MarkdownIt
 from markdown_it.rules_block import StateBlock
+from markdown_it.token import Token
+from markdown_it.utils import EnvType, OptionsDict
 
 
 def pagebreak_plugin(md: MarkdownIt) -> None:
     """Parse page breaks (``---``) in Markdown documents."""
     md.block.ruler.before("hr", "pagebreak", pagebreak_rule)
+    md.add_render_rule("pagebreak", pagebreak)
 
 
 def pagebreak_rule(state: StateBlock, startline: int, endline: int, silent: bool) -> bool:
@@ -64,3 +69,14 @@ def pagebreak_rule(state: StateBlock, startline: int, endline: int, silent: bool
 
     state.line = startline + 1
     return True
+
+
+def pagebreak(
+    self,
+    tokens: Sequence[Token],
+    idx: int,
+    options: OptionsDict,
+    env: EnvType,
+) -> str:
+    """Render page break as an HTML horizontal rule with class 'pagebreak'."""
+    return '<hr class="pagebreak" />\n'

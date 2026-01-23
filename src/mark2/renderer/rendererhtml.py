@@ -26,43 +26,6 @@ class RendererHTML(markdown_it.renderer.RendererHTML):
     __output__: str = "html"
 
     ###########################################################################
-    # sup_plugin renderers
-    ###########################################################################
-
-    def sup_open(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> str:
-        """Render opening <sup> tag for superscript text."""
-        return "<sup>"
-
-    def sup_close(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> str:
-        """Render closing </sup> tag for superscript text."""
-        return "</sup>"
-
-    ###########################################################################
-    # pagebreak_plugin renderers
-    ###########################################################################
-    def pagebreak(
-        self,
-        tokens: Sequence[Token],
-        idx: int,
-        options: OptionsDict,
-        env: EnvType,
-    ) -> str:
-        """Render page break as an HTML horizontal rule with class 'pagebreak'."""
-        return '<hr class="pagebreak" />\n'
-
-    ###########################################################################
     # myst_role_plugin renderers (with special handling).
     ###########################################################################
 
