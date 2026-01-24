@@ -21,7 +21,7 @@ from mark2.renderer import (
     HTMLRenderer,
     PDFRenderer,
     MDRenderer,
-    ReferenceHTMLRenderer,
+    ReferenceRenderer,
 )
 from mark2.plugins import footnote_plugin as mark2_footnote_plugin
 from mark2.plugins import (
@@ -121,8 +121,8 @@ def main() -> None:
 
     data = read_data(args.input_filename)
 
-    if args.reference_html:
-        renderer_cls = ReferenceHTMLRenderer
+    if args.reference:
+        renderer_cls = ReferenceRenderer
     elif args.format == "html":
         renderer_cls = HTMLRenderer
     # elif args.format == "odt":

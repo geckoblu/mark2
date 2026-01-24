@@ -19,7 +19,7 @@ def configure_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
-    output_choices = ["html", "epub", "pdf", "tex", "md"]
+    output_choices = ["html", "epub", "pdf", "tex"]  # disabled "md" for now
 
     parser = argparse.ArgumentParser(
         description="Convert a Markdown file to various output formats.",
@@ -76,22 +76,16 @@ def configure_parser() -> argparse.ArgumentParser:
     )
 
     # MARKDOWN options ---------------------------
-    markdown_group = parser.add_argument_group("MARKDOWN options")
-    markdown_group.add_argument(
-        "--md-word-wrap",
-        choices=["no", "keep", "semantic"],
-        help="word wrap level for markdown output [default: no]",
-    )
+    # markdown_group = parser.add_argument_group("MARKDOWN options")
+    # markdown_group.add_argument(
+    #     "--md-word-wrap",
+    #     choices=["no", "keep", "semantic"],
+    #     help="word wrap level for markdown output [default: no]",
+    # )
 
     # Hidden/development options
-    dev_group = parser.add_mutually_exclusive_group()
-    dev_group.add_argument(
-        "--reference-html",
-        action="store_true",
-        help=argparse.SUPPRESS,
-    )
-    dev_group.add_argument(
-        "--reference-html-test",
+    parser.add_argument(
+        "--reference",
         action="store_true",
         help=argparse.SUPPRESS,
     )
@@ -124,8 +118,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
     if fmt != "epub" and args.epub_split_at_header != "h2":
         parser.error("--epub-split-at-header is only valid with --format epub")
 
-    if fmt != "md" and args.md_word_wrap:
-        parser.error("--md-word-wrap is only valid with --format md")
+    # if fmt != "md" and args.md_word_wrap:
+    #     parser.error("--md-word-wrap is only valid with --format md")
 
 
 def parse_args() -> argparse.Namespace:

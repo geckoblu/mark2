@@ -21,7 +21,7 @@ from markdown_it.utils import EnvType, OptionsDict
 from mark2.renderer.baserenderer import BaseRenderer
 
 
-class ReferenceHTMLRenderer(BaseRenderer):
+class ReferenceRenderer(BaseRenderer):
     """A reference HTML renderer that produces clean, semantic HTML."""
 
     __output__: str = "html"

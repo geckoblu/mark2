@@ -4,14 +4,18 @@ This module contains tests for the EPUBRenderer class which renders
 markdown to EPUB format with support for covers, metadata, TOC, and more.
 """
 
+import shutil
+import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
 
+import pytest
 from markdown_it import MarkdownIt
 from mdit_py_plugins.front_matter import front_matter_plugin
 from mdit_py_plugins.footnote import footnote_plugin
 
+from mark2.main import set_plugins
 from mark2.renderer.epub.renderer import EPUBRenderer
 from mark2.plugins.headingsid_plugin import headingsid_plugin
 from mark2.plugins.pagebreak_plugin import pagebreak_plugin
@@ -681,6 +685,103 @@ More content.
 
                 # Should have content src with anchors
                 assert ".html#" in ncx_content
+
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    @pytest.mark.skipif(not shutil.which("epubcheck"), reason="epubcheck not installed")
+    def test_epub_validation_with_epubcheck(self):
+        """Test that generated EPUB passes epubcheck validation.
+
+        This test requires epubcheck to be installed and available in PATH.
+        On Ubuntu/Debian: apt-get install epubcheck
+        On macOS: brew install epubcheck
+        Or download from: https://github.com/w3c/epubcheck/releases
+
+        Note: This test uses a simple document without footnotes to avoid
+        validation issues with the default footnote plugin rendering.
+        """
+        markdown_input = """---
+title: Valid EPUB Test
+author: Test Author
+language: en
+date: 2024-01-22
+publisher: Test Publisher
+subject: Testing, EPUB
+---
+
+# Chapter 1
+
+This is the first chapter with some content.
+
+## Section 1.1
+
+More detailed content here with **bold** and *italic* text.
+
+- Item 1
+- Item 2
+- Item 3
+
+# Chapter 2
+
+Second chapter content with a paragraph.
+
+## Section 2.1
+
+Final section with a [link](http://example.com) and an image reference.
+
+## Section 2.2
+
+Text with footnote[^1].
+More text[^2].
+
+[^1]: First note.
+[^2]: Second note.
+"""
+
+        md = MarkdownIt("commonmark", renderer_cls=EPUBRenderer)
+        set_plugins(md)
+
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".epub", delete=False) as f:
+            temp_path = f.name
+
+        try:
+            env = {"output_filename": temp_path, "epub_split_at_header": "h2"}
+            tokens = md.parse(markdown_input, env)
+            md.renderer.render(tokens, md.options, env)
+
+            # Verify EPUB was created
+            assert Path(temp_path).exists()
+
+            # Run epubcheck validation
+            result = subprocess.run(
+                ["epubcheck", temp_path],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+
+            # Check that epubcheck passes (exit code 0)
+            # Print output for debugging if test fails
+            if result.returncode != 0:
+                print("\n--- EPUBCHECK STDOUT ---")
+                print(result.stdout)
+                print("\n--- EPUBCHECK STDERR ---")
+                print(result.stderr)
+
+            assert result.returncode == 0, (
+                f"EPUB validation failed with epubcheck.\n"
+                f"STDOUT: {result.stdout}\n"
+                f"STDERR: {result.stderr}"
+            )
+
+            # Verify that epubcheck reports success
+            assert (
+                "Check finished with no errors or warnings" in result.stdout
+                or "No errors or warnings detected" in result.stdout
+                or result.returncode == 0
+            )
 
         finally:
             Path(temp_path).unlink(missing_ok=True)
