@@ -3,21 +3,13 @@
 To run the pytest tests, you need to install pytest first:
 
 ```bash
-pip install pytest
+pip3 install pytest
 ```
 
-## Test Structure
+to run tests with coverage, you need to install pytest-cov
 
-The tests follow the same package structure as the source code:
-
-```
-tests/
-├── odttools/
-│   ├── __init__.py
-│   └── parser/
-│       ├── __init__.py
-│       └── test_element.py    # Tests for src/odttools/parser/element.py
-└── README.md
+```bash
+pip3 install pytest-cov
 ```
 
 ## Running Tests
@@ -33,17 +25,32 @@ pytest tests/ -v --spec
 pytest -m spec -v
 
 # Run tests for a specific module
-pytest tests/odttools/parser/test_element.py -v
+pytest tests/mark2/test_main.py -v
 
 # Run a specific test class
-pytest tests/odttools/parser/test_element.py::TestExtractTextContent -v
+pytest tests/mark2/test_main.py::TestMainFunction -v
 
 # Run a specific test method
-pytest tests/odttools/parser/test_element.py::TestExtractTextContent::test_odt_paragraph_with_span -v
-
-# Run tests with coverage (if pytest-cov is installed)
-pytest tests/ --cov=src/odttools --cov-report=html
+pytest tests/mark2/test_main.py::TestMainFunction::test_specific -v
 
 # Run a specific parameter test
 pytest tests/mark2/test_main.py -k "pdf"  | grep -A 5 ^E
+
+# Run tests with coverage (requires pytest-cov)
+pytest tests/mark2 --cov=src/mark2 --cov-report=html
+```
+
+## Test Structure
+
+The tests follow the same package structure as the source code:
+
+```
+tests/
+├── mark2/
+│   ├── __init__.py
+│   ├── test_main.py           # Tests for src/mark2/main.py
+│   ├── plugins/               # Tests for plugins
+│   └── renderer/              # Tests for renderers
+├── spec/                      # Spec tests
+└── README.md
 ```

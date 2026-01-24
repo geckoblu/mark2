@@ -7,6 +7,7 @@ custom pagebreak tokens. Thematic breaks with asterisks (***) are not affected.
 from collections.abc import Sequence
 
 from markdown_it import MarkdownIt
+from markdown_it.renderer import RendererProtocol
 from markdown_it.rules_block import StateBlock
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
@@ -72,7 +73,7 @@ def pagebreak_rule(state: StateBlock, startline: int, endline: int, silent: bool
 
 
 def pagebreak(
-    self,
+    renderer: RendererProtocol,
     tokens: Sequence[Token],
     idx: int,
     options: OptionsDict,

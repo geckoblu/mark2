@@ -130,7 +130,7 @@ def footnote_tail(state: StateCore) -> None:
 
 
 def render_footnote_anchor_name(
-    self: RendererProtocol,
+    renderer: RendererProtocol,
     tokens: Sequence[Token],
     idx: int,
     options: OptionsDict,
@@ -141,7 +141,7 @@ def render_footnote_anchor_name(
     The anchor name is used in HTML id and href attributes for linking.
 
     Args:
-        self: Renderer protocol instance
+        renderer: Renderer protocol instance
         tokens: Token sequence
         idx: Current token index
         options: Parser options
@@ -161,7 +161,7 @@ def render_footnote_anchor_name(
 
 
 def render_footnote_caption(
-    self: RendererProtocol,
+    renderer: RendererProtocol,
     tokens: Sequence[Token],
     idx: int,
     options: OptionsDict,
@@ -172,7 +172,7 @@ def render_footnote_caption(
     The caption is what's displayed to users (the visible number).
 
     Args:
-        self: Renderer protocol instance
+        renderer: Renderer protocol instance
         tokens: Token sequence
         idx: Current token index
         options: Parser options

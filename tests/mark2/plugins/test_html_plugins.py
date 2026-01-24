@@ -111,13 +111,12 @@ def test_myst_role_plugin():
     assert result == expected
 
 
-@pytest.mark.skip(reason="TODO: Temporarily disabled - needs implementation review")
 def test_attrs_block_plugin():
     """Test attrs block plugin rendering."""
     md = MarkdownIt(renderer_cls=RendererHTML)
     md.use(attrs_block_plugin)
 
-    input_text = "Paragraph with class {.my-class}.\n\nAnother paragraph."
+    input_text = "{.my-class}\nParagraph with class.\n\nAnother paragraph."
     expected = '<p class="my-class">Paragraph with class.</p>\n<p>Another paragraph.</p>\n'
 
     result = md.render(input_text)

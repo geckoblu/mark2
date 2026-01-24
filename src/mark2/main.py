@@ -3,13 +3,11 @@
 
 import sys
 
+from mdit_py_plugins.attrs import attrs_block_plugin
 from mdit_py_plugins.footnote import footnote_plugin
 from mdit_py_plugins.front_matter import front_matter_plugin
-from mdit_py_plugins.attrs import attrs_block_plugin
-
-
-# from mdit_py_plugins.myst_role import myst_role_plugin
 from mdit_py_plugins.subscript import sub_plugin
+
 
 from markdown_it import MarkdownIt
 
@@ -55,12 +53,14 @@ def set_plugins(md: MarkdownIt) -> None:
     Args:
         md: MarkdownIt parser instance
     """
-    md.use(front_matter_plugin)
+    md.enable("table")
+    md.enable("strikethrough")
     md.use(attrs_block_plugin)
-    md.use(container_plugin)
+    md.use(front_matter_plugin)
     md.use(sub_plugin)
-    md.use(sup_plugin)
 
+    md.use(container_plugin)
+    md.use(sup_plugin)
     md.use(headingsid_plugin, min_level=1, max_level=6)
     md.use(myst_role_plugin)
     md.use(pagebreak_plugin)

@@ -12,6 +12,22 @@ A powerful and flexible Markdown converter that transforms Markdown files into m
 - **EPUB Customization**: Add custom covers and stylesheets to EPUB output
 - **Flexible I/O**: Read from files or stdin, write to files or stdout
 
+### Plugins
+
+Mark2 includes several powerful plugins that extend standard Markdown capabilities:
+
+- [YAML Front Matter](#1-yaml-front-matter) - Document metadata using YAML
+- [Footnotes](#2-footnotes) - Reference-style and inline footnotes
+- [MyST Roles](#3-myst-roles-inline-extensions) - Inline semantic extensions
+- [MyST Directives](#4-myst-directives-block-extensions) - Block-level extensions (comments, breaks, targets)
+- [Container Blocks](#5-container-blocks) - Custom block containers for admonitions and notes
+- [Superscript and Subscript](#6-superscript-and-subscript) - Scientific notation support
+- [Page Breaks](#7-page-breaks) - Control pagination in PDF and EPUB output
+- [Custom Heading IDs](#8-custom-heading-ids) - Automatic and custom heading identifiers
+- [Tables](#9-tables-gfm-style) - GitHub-Flavored Markdown tables
+
+See the [Extensions Over CommonMark](#extensions-over-commonmark) section for detailed documentation and examples.
+
 ## Installation
 
 ```bash
@@ -47,20 +63,24 @@ cat input.md | ./mark2.sh - -f html
 
 ```
 positional arguments:
-  INPUT_FILENAME        Input Markdown (.md) file to convert (use '-' for stdin)
+  INPUT_FILENAME        input Markdown (.md) file to convert (use '-' for stdin)
 
-optional arguments:
-  -h, --help            Show help message and exit
-  -f, --format {html,epub,pdf,tex,md}
-                        Output format (default: html)
-  -o, --output-filename OUTPUT_FILENAME
-                        Output file name (use '-' for stdout)
-                        Default: input name with format extension
-  -q, --quiet           Suppress non-error messages
+options:
+  -h, --help            show this help message and exit
+  -f {html,epub,pdf,tex}, --format {html,epub,pdf,tex}
+                        output format (choices: html, epub, pdf, tex) [default: html]
+  -o OUTPUT_FILENAME, --output-filename OUTPUT_FILENAME
+                        output file name (use '-' for stdout) [default: input name with format extension]
+  -q, --quiet           suppress non-error messages
 
 EPUB options:
-  --epub-cover COVER    Cover image for EPUB (jpg, jpeg, png)
-  --epub-stylesheet CSS Stylesheet for EPUB
+  --epub-cover EPUB_COVER
+                        cover image for epub
+  --epub-generatecover  generate cover for epub
+  --epub-stylesheet EPUB_STYLESHEET
+                        stylesheet for epub
+  --epub-split-at-header {h1,h2,h3,h4,h5,h6}
+                        header level at which to split content into separate pages [default: h2]
 ```
 
 ### Examples
@@ -107,7 +127,17 @@ Add metadata to your documents using YAML front matter at the beginning of your 
 title: Document Title
 author: John Doe
 date: 2024-01-22
-description: A comprehensive guide
+id: ISBN<9788831550420>
+publisher: Acme
+subject: Test,Emphasis
+description: |
+  This is a multi-line
+  description that preserves
+  line breaks.
+summary: >
+  This is a long paragraph
+  that will be folded into
+  a single line with spaces.
 ---
 
 # Content starts here
@@ -119,23 +149,6 @@ description: A comprehensive guide
 - Supports standard YAML syntax including multi-line values
 - Metadata can be used by renderers (especially EPUB and PDF)
 
-**Example:**
-```markdown
----
-title: The Great Gatsby
-author: F. Scott Fitzgerald
-publisher: Charles Scribner's Sons
-date: 1925-04-10
-subject: Fiction, Classic Literature
-description: |
-  A story of decadence and excess,
-  and the American dream in the 1920s.
----
-
-# Chapter 1
-
-In my younger and more vulnerable years...
-```
 
 ### 2. Footnotes
 
@@ -161,15 +174,6 @@ Text with an inline footnote^[This note appears inline].
 - Inline footnotes using `^[...]` syntax
 - Footnotes are collected and rendered at the end of the document
 
-**Example:**
-```markdown
-The theory of relativity[^einstein] revolutionized physics.
-
-According to recent studies^[Smith et al., 2024], this approach
-shows promising results.
-
-[^einstein]: Proposed by Albert Einstein in 1905.
-```
 
 ### 3. MyST Roles (Inline Extensions)
 
@@ -186,23 +190,18 @@ Apply semantic meaning or special formatting to inline text using MyST roles.
 - Newlines in content are converted to spaces
 - Can be escaped with backslash: `\{role}`content``
 
-**Examples:**
+**Special Roles:**
+
+Some roles don't require content or backticks:
+
 ```markdown
-{emphasis}`important text`
-{download}`filename.pdf`
-{ref}`section-label`
-{doc}`../other-file`
-{math}`x^2 + y^2 = z^2`
-{kbd}`Ctrl+C`
-{abbr}`HTML (HyperText Markup Language)`
-{sub}`subscript text`
-{sup}`superscript text`
+{line-break} or {br}
 ```
 
-**Rendered as:**
-```html
-<code class="myst role">{role-name}[content]</code>
-```
+- `{line-break}` or `{br}` - Insert a line break without content
+- These roles are used without backticks or content
+- `{br}` is an alias for `{line-break}`
+- can be used to insert line break in headers
 
 ### 4. MyST Directives (Block Extensions)
 
@@ -279,29 +278,6 @@ Content with **markdown** support.
 - Containers can be nested with more colons: `::::`, `:::::`, etc.
 - Useful for admonitions, warnings, notes, etc.
 
-**Examples:**
-```markdown
-::: warning
-This is a warning message with *emphasis*.
-:::
-
-::: note
-Important information goes here.
-:::
-
-:::: outer-container
-::: inner-container
-Nested content
-:::
-::::
-```
-
-**Rendered as:**
-```html
-<div class="warning">
-<p>This is a warning message with <em>emphasis</em>.</p>
-</div>
-```
 
 ### 6. Superscript and Subscript
 
@@ -315,20 +291,6 @@ This is a footnote reference^1^
 ```markdown
 H~2~O
 Temperature at T~0~
-```
-
-**Examples:**
-```markdown
-Water molecule: H~2~O
-Einstein's equation: E = mc^2^
-Chemical formula: CO~2~ concentration
-Mathematical expression: x^n^ + y^n^ = z^n^
-```
-
-**Rendered as:**
-```html
-H<sub>2</sub>O
-E = mc<sup>2</sup>
 ```
 
 ### 7. Page Breaks
@@ -350,18 +312,6 @@ Content on second page
 - Thematic breaks with asterisks (`***`) remain unchanged
 - Rendered differently depending on output format (special handling for PDF/EPUB)
 
-**Example:**
-```markdown
-# Chapter 1
-
-This is the content of chapter 1.
-
----
-
-# Chapter 2
-
-This starts on a new page in PDF output.
-```
 
 ### 8. Custom Heading IDs
 
@@ -482,8 +432,11 @@ The project is structured as follows:
 
 ```bash
 # Run tests
-python3 -m pytest tests/
+export PYTHONPATH=./src:./tests
+pytest tests/
 ```
+
+see the tests [README](./tests/README.md) for detailed examples
 
 ### Direct Python Usage
 

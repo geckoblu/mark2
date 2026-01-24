@@ -17,29 +17,12 @@ class RendererHTML(markdown_it.renderer.RendererHTML):
     """Custom HTML renderer with support for mark2 plugins.
 
     Extends markdown-it-py's RendererHTML to add rendering support for:
-    - Superscript tags (sup_plugin)
-    - MyST roles including line breaks (myst_role_plugin)
     - Front matter parsing (front_matter_plugin)
+    - Footnotes (footnote_plugin)
 
     """
 
     __output__: str = "html"
-
-    ###########################################################################
-    # myst_role_plugin renderers (with special handling).
-    ###########################################################################
-
-    def myst_role(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> str:
-        """Render MyST role (inline span with special handling)."""
-        token = tokens[idx]
-
-        name = token.meta.get("name", "unknown")
-        if name == "line-break":
-            return "<br/>"
-        else:
-            return f'<span class="role">{token.content}</span>'
 
     ###########################################################################
     # front_matter_plugin renderers

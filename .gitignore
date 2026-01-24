@@ -1,12 +1,9 @@
 .~lock.*
+.coverage
+
+htmlcov/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
-
-src/mark2/plugins/myst_block_plugin_original.py
-
-tests/assets/TEST-DYNAMIC-CONTAINERS.md
-tests/assets/TEST-MULTIPLE-CONTAINERS.md
-tests/assets/TEST-NESTED-CONTAINERS.md
 

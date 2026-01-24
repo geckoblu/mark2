@@ -1,10 +1,14 @@
 """The content of this file is adapted from mdit_py_plugins.myst_role.myst_role_plugin,
 with modifications to allow empty content roles."""
 
+from collections.abc import Sequence
 import re
 
 from markdown_it import MarkdownIt
+from markdown_it.renderer import RendererProtocol
 from markdown_it.rules_inline import StateInline
+from markdown_it.token import Token
+from markdown_it.utils import EnvType, OptionsDict
 
 # Matches role names like {role-name}, {abbr}, {line-break}, etc.
 VALID_NAME_PATTERN = re.compile(r"^\{([a-zA-Z0-9\_\-\+\:]+)\}")
@@ -23,10 +27,11 @@ def myst_role_plugin(md: MarkdownIt) -> None:
     Args:
         md: MarkdownIt instance to register the plugin with
     """
-    md.inline.ruler.before("backticks", "myst_role", myst_role)
+    md.inline.ruler.before("backticks", "myst_role", _myst_role_parser)
+    md.add_render_rule("myst_role", myst_role)
 
 
-def myst_role(state: StateInline, silent: bool) -> bool:
+def _myst_role_parser(state: StateInline, silent: bool) -> bool:
     """Parse MyST role syntax {role-name}`content` or special ALLOWED_EMPTY_ROLES without content.
 
     Args:
@@ -88,3 +93,20 @@ def myst_role(state: StateInline, silent: bool) -> bool:
     state.pos = pos + match.end() + 1
 
     return True
+
+
+def myst_role(
+    renderer: RendererProtocol,
+    tokens: Sequence[Token],
+    idx: int,
+    options: OptionsDict,
+    env: EnvType,
+) -> str:
+    """Render MyST role (inline span with special handling)."""
+    token = tokens[idx]
+
+    name = token.meta.get("name", "unknown")
+    if name == "line-break":
+        return "<br/>"
+    else:
+        return f'<span class="role">{token.content}</span>'

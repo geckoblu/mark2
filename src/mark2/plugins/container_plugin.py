@@ -56,7 +56,7 @@ def container_plugin(
         return False, ""
 
     def renderDefault(
-        self: RendererProtocol,
+        renderer: RendererProtocol,
         tokens: Sequence[Token],
         idx: int,
         _options: OptionsDict,
@@ -69,17 +69,17 @@ def container_plugin(
             if class_name:
                 token.attrJoin("class", class_name)
 
-        if hasattr(self, "renderToken"):
+        if hasattr(renderer, "renderToken"):
             # markdown-it-py compatibility
-            return self.renderToken(tokens, idx, _options, env)
+            return renderer.renderToken(tokens, idx, _options, env)
         else:
             renderer_func = token.type
-            if hasattr(self, renderer_func):
+            if hasattr(renderer, renderer_func):
                 return renderer_func(tokens, idx, _options, env)
-            elif hasattr(self, "container_open") and token.type == "container_open":
-                return self.container_open(tokens, idx, _options, env)
-            elif hasattr(self, "container_close") and token.type == "container_close":
-                return self.container_close(tokens, idx, _options, env)
+            elif hasattr(renderer, "container_open") and token.type == "container_open":
+                return renderer.container_open(tokens, idx, _options, env)
+            elif hasattr(renderer, "container_close") and token.type == "container_close":
+                return renderer.container_close(tokens, idx, _options, env)
             else:
                 # Debug output to stderr
                 print(
