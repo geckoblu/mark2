@@ -92,6 +92,11 @@ def configure_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("-q", "--quiet", action="store_true", help="suppress non-error messages")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--link-check",
+        action="store_true",
+        help="extract and check all links in the document",
+    )
 
     return parser
 
@@ -134,7 +139,7 @@ def parse_args() -> argparse.Namespace:
     parser = configure_parser()
     args = parser.parse_args()
 
-    if args.reference:
+    if args.reference or args.link_check:
         args.output_filename = "-"
 
     # Determine output filename

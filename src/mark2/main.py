@@ -12,6 +12,7 @@ from mdit_py_plugins.subscript import sub_plugin
 from markdown_it import MarkdownIt
 
 from mark2.args import get_env, parse_args
+from mark2 import linkchecker
 from mark2.renderer import (
     ConTeXtRenderer,
     EPUBRenderer,
@@ -119,6 +120,15 @@ def main() -> None:
     env = get_env(args)
 
     data = read_data(args.input_filename)
+
+    # If link-check mode, just check links and exit
+    if args.link_check:
+        md = MarkdownIt("commonmark")
+        set_plugins(md)
+        tokens = md.parse(data, env)
+        results = linkchecker.check_all_links(tokens, quiet=args.quiet)
+        success = linkchecker.print_link_report(results)
+        sys.exit(0 if success else 1)
 
     if args.reference:
         renderer_cls = ReferenceRenderer

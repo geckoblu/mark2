@@ -1,6 +1,5 @@
 """Tests for HTML plugins in the Mark2 Markdown processor."""
 
-import pytest
 from markdown_it import MarkdownIt
 
 from mdit_py_plugins.attrs import attrs_block_plugin

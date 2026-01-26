@@ -30,7 +30,11 @@ sup {
 }
 
 a {
-  text-decoration: None;
+  text-decoration: none;
+}
+
+blockquote p {
+	text-indent: 0;
 }
 
 div.footnotes {
@@ -43,6 +47,15 @@ div.footnote p {
   text-indent: -1em;
 }
 
+div.colophon {
+	margin: 2em;
+	font-size: 0.85em;
+}
+
+div.colophon p {
+	text-indent: 0;
+}
+
 .center, div.center p {
 	text-indent: 0;
 	text-align: center;
@@ -52,7 +65,7 @@ div.footnote p {
 	text-align: left;
 }
 
-.noindent, div.noident p {
+.noindent, div.noindent p {
 	text-indent: 0;
 }
 """

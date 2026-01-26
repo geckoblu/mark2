@@ -62,13 +62,46 @@ content` → renders as "multi line content"
 ### HTML Output
 By default, roles are rendered as:
 ```html
-<code class="myst role">{role-name}[content]</code>
+<span class="role">content</span>
 ```
 
 For example, `{emphasis}`text`` becomes:
 ```html
-<code class="myst role">{emphasis}[text]</code>
+<span class="role">text</span>
 ```
+
+### Special Empty Roles
+Some roles are allowed to be used without backticks or content. These act as markers:
+
+**Supported empty roles:**
+- `{line-break}` or `{br}` - Inserts a line break
+
+**Syntax:**
+```markdown
+{line-break}
+{br}
+```
+
+**Rendered as:**
+```html
+<br/>
+```
+
+**Example:**
+```markdown
+First line{line-break}
+Second line{br}
+Third line
+```
+
+becomes:
+```html
+<p>First line<br/>
+Second line<br/>
+Third line</p>
+```
+
+**Note:** The `{br}` role is an alias for `{line-break}` and they both render identically.
 
 ### Usage in markdown-it-py
 
@@ -88,11 +121,15 @@ html = md.render("{emphasis}`important text`")
 **Custom rendering:**
 You can override the default renderer to handle specific roles differently:
 ```python
-def custom_myst_role_renderer(self, tokens, idx, options, env):
+def custom_myst_role_renderer(renderer, tokens, idx, options, env):
     token = tokens[idx]
     name = token.meta.get("name", "unknown")
     content = token.content
-    
+
+    # Handle special empty roles
+    if name == "line-break":
+        return "<br/>"
+
     # Custom logic for specific roles
     if name == "emphasis":
         return f"<em>{content}</em>"
@@ -102,7 +139,7 @@ def custom_myst_role_renderer(self, tokens, idx, options, env):
         return f"<code>{content}</code>"
     else:
         # Default rendering
-        return f'<code class="myst role">{{{name}}}[{content}]</code>'
+        return f'<span class="role">{content}</span>'
 
 md = MarkdownIt()
 md.use(myst_role_plugin)
@@ -115,6 +152,23 @@ md.add_render_rule("myst_role", custom_myst_role_renderer)
 - The plugin doesn't define specific role behaviors - it only parses the syntax
 - To implement specific role behaviors (like `{download}`, `{ref}`, etc.), you need to create custom renderers
 - The plugin is parsed before standard backtick code spans in the inline parsing chain
+- Empty roles (without backticks) are only supported for roles in the `ALLOWED_EMPTY_ROLES` set
+  - Currently supported: `{line-break}`, `{br}`
+  - These roles act as self-closing markers
+
+### Implementation Details
+
+**Parser function:** `_myst_role_parser`
+- Registered before "backticks" in the inline ruler
+- Uses regex pattern: `^\{([a-zA-Z0-9\_\-\+\:]+)\}` to match role names
+- Supports escaped roles with backslash: `\{role}` won't be parsed
+- Handles multiple backticks for content containing backticks
+- Special handling for empty roles in `ALLOWED_EMPTY_ROLES`
+
+**Renderer function:** `myst_role`
+- Renders `{line-break}` as `<br/>`
+- Renders other roles as `<span class="role">content</span>`
+- Can be overridden via `md.add_render_rule("myst_role", custom_renderer)`
 
 ### Common MyST Roles (require custom renderers)
 While the plugin parses any valid role name, these are commonly used MyST roles you might want to implement custom renderers for:
@@ -128,51 +182,62 @@ While the plugin parses any valid role name, these are commonly used MyST roles 
 - `{sub}` - subscript
 - `{sup}` - superscript
 
-User: can I use an empty role (without content) to just place markers?
-Like {line-break}
+### Extending with Custom Empty Roles
 
-GitHub Copilot: Looking at the code, **no, you cannot use an empty role without backticks**. The plugin requires at least one backtick after the role name.
-
-Here's the critical part:
+To add your own empty roles (markers), modify the `ALLOWED_EMPTY_ROLES` set in the plugin:
 
 ```python
-tick_length = pos - start
-if not tick_length:
-    return False  # Must have at least one backtick
+# In myst_role_plugin.py
+ALLOWED_EMPTY_ROLES = {"line-break", "br", "page-break", "clearfix"}
+EMPTY_ROLES_ALIAS = {"br": "line-break"}
 ```
 
-However, **you CAN use a role with empty content** by using backticks with nothing between them:
-
-```markdown
-{line-break}``
-```
-
-This would parse successfully and create a token with:
-- `name`: `"line-break"`
-- `content`: `""` (empty string)
-
-You could then implement a custom renderer to handle these empty-content roles as markers:
+Then implement custom rendering:
 
 ```python
-def custom_myst_role_renderer(self, tokens, idx, options, env):
+def custom_myst_role_renderer(renderer, tokens, idx, options, env):
     token = tokens[idx]
     name = token.meta.get("name", "unknown")
-    content = token.content
-    
+
     # Handle marker-style roles with empty content
-    if not content:
-        if name == "line-break":
-            return "<br/>"
-        elif name == "page-break":
-            return '<div class="page-break"></div>'
-        elif name == "horizontal-rule":
-            return "<hr/>"
-    
+    if name == "line-break":
+        return "<br/>"
+    elif name == "page-break":
+        return '<div class="page-break"></div>'
+    elif name == "clearfix":
+        return '<div class="clearfix"></div>'
+
     # Handle roles with content
-    return f'<code class="myst role">{{{name}}}[{content}]</code>'
+    return f'<span class="role">{token.content}</span>'
 ```
 
-Then you could use:
-- `{line-break}`` → `<br/>`
-- `{page-break}`` → `<div class="page-break"></div>`
-- `{horizontal-rule}`` → `<hr/>`
+Now you can use:
+- `{line-break}` → `<br/>`
+- `{page-break}` → `<div class="page-break"></div>`
+- `{clearfix}` → `<div class="clearfix"></div>`
+
+---
+
+## Frequently Asked Questions
+
+**Q: Can I use an empty role (without content) to just place markers?**
+
+A: Yes! As of the Mark2 implementation, roles in the `ALLOWED_EMPTY_ROLES` set (`{line-break}` and `{br}`) can be used without backticks:
+
+```markdown
+First line{line-break}Second line
+```
+
+For roles not in this set, you must use backticks with empty content:
+
+```markdown
+{my-marker}``
+```
+
+**Q: Why isn't my role rendering with custom HTML?**
+
+A: The default renderer wraps all roles in `<span class="role">`. You need to override the renderer with `md.add_render_rule("myst_role", custom_renderer)` to implement custom behavior.
+
+**Q: Can I have nested roles?**
+
+A: No, MyST roles are inline elements and don't support nesting. Use container blocks for nested structures.
