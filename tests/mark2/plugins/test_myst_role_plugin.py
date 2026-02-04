@@ -1,0 +1,342 @@
+"""Comprehensive tests for the MyST role plugin module."""
+
+import pytest
+from markdown_it import MarkdownIt
+
+from mark2.plugins.myst_role_plugin import myst_role_plugin
+from mark2.renderer import RendererHTML
+
+
+class TestMystRolePlugin:
+    """Test suite for the MyST role plugin."""
+
+    def test_basic_role(self):
+        """Test basic role with simple content."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}`custom text` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">custom text</span>' in result
+
+    def test_role_with_dashes(self):
+        """Test role names with dashes."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {my-role}`content` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="my-role">content</span>' in result
+
+    def test_role_with_underscores(self):
+        """Test role names with underscores."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {my_role}`content` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="my_role">content</span>' in result
+
+    def test_role_with_numbers(self):
+        """Test role names with numbers."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {role123}`content` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="role123">content</span>' in result
+
+    def test_role_with_colon(self):
+        """Test role names with colons (namespace-style)."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {namespace:role}`content` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="namespace:role">content</span>' in result
+
+    def test_role_with_plus(self):
+        """Test role names with plus signs."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {role+name}`content` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="role+name">content</span>' in result
+
+    def test_multiple_roles_in_text(self):
+        """Test multiple roles in the same text."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "First {role1}`content1` and second {role2}`content2` here."
+        result = md.render(markdown_input)
+
+        assert '<span class="role1">content1</span>' in result
+        assert '<span class="role2">content2</span>' in result
+
+    def test_role_with_emphasis(self):
+        """Test role content with emphasis markup."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}`*emphasized* content` example."
+        result = md.render(markdown_input)
+
+        # Content should be rendered as-is, not parsed
+        assert '<span class="customrole">*emphasized* content</span>' in result
+
+    def test_role_with_newline(self):
+        """Test role content with newlines (should be converted to spaces)."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}`multi\nline` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">multi line</span>' in result
+
+    def test_role_with_multiple_backticks(self):
+        """Test role with multiple backticks for content containing backticks."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}``content with `backtick` inside`` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">content with `backtick` inside</span>' in result
+
+    def test_role_with_triple_backticks(self):
+        """Test role with triple backticks."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}```content with ``double`` inside``` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">content with ``double`` inside</span>' in result
+
+    def test_line_break_role(self):
+        """Test line-break role (special empty role)."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {line-break}in the text."
+        result = md.render(markdown_input)
+
+        assert "<br/>" in result
+        assert "line-break" not in result
+
+    def test_br_alias_role(self):
+        """Test br alias for line-break role."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {br}in the text."
+        result = md.render(markdown_input)
+
+        assert "<br/>" in result
+        assert "{br}" not in result
+
+    def test_br_role_in_heading(self):
+        """Test br role inside a heading."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "# This is a {br}in the header."
+        result = md.render(markdown_input)
+
+        assert "<br/>" in result
+        assert "<h1>" in result
+
+    def test_multiple_line_breaks(self):
+        """Test multiple line-break roles in text."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "Line 1{br}Line 2{line-break}Line 3"
+        result = md.render(markdown_input)
+
+        assert result.count("<br/>") == 2
+
+    def test_escaped_role(self):
+        """Test escaped role (should not be parsed)."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = r"This is an \{customrole}`content` example."
+        result = md.render(markdown_input)
+
+        # Escaped role should appear as literal text
+        assert '<span class="customrole">' not in result
+        assert "{customrole}" in result
+
+    def test_invalid_role_no_backticks(self):
+        """Test that roles without backticks (non-empty) are not parsed."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is {not-a-role}text here."
+        result = md.render(markdown_input)
+
+        # Should not be parsed as a role
+        assert '<span class="customrole">' not in result
+        assert "{not-a-role}" in result
+
+    def test_role_with_empty_content(self):
+        """Test role with empty content is not allowed."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}`` example."
+        result = md.render(markdown_input)
+
+        # Empty content should not be parsed as a role
+        assert '<span class="customrole">' not in result
+        assert "{customrole}``" in result
+
+    def test_role_without_closing_backticks(self):
+        """Test that role without closing backticks is not parsed."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}`content without closing"
+        result = md.render(markdown_input)
+
+        # Should not be parsed as a role
+        assert '<span class="customrole">' not in result
+        assert "{customrole}`content without closing" in result
+
+    def test_role_in_paragraph(self):
+        """Test role in a paragraph."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "Paragraph with {customrole}`inline content` here.\n\nAnother paragraph."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">inline content</span>' in result
+        assert result.count("<p>") == 2
+
+    def test_role_at_start_of_line(self):
+        """Test role at the start of a line."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "{customrole}`content` at the start."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">content</span>' in result
+
+    def test_role_at_end_of_line(self):
+        """Test role at the end of a line."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "Content ends with {customrole}`text`"
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">text</span>' in result
+
+    def test_role_with_special_characters(self):
+        """Test role content with special characters."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}`content with & < > chars` example."
+        result = md.render(markdown_input)
+
+        # Special chars should be escaped by the renderer
+        assert '<span class="customrole">content with &amp; &lt; &gt; chars</span>' in result
+
+    def test_role_adjacent_to_punctuation(self):
+        """Test role adjacent to punctuation."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "Here is a {customrole}`word`, and here's another."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">word</span>,' in result
+
+    def test_nested_backticks_mismatch(self):
+        """Test that mismatched backtick counts don't parse."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        # Start with double backticks, end with single
+        markdown_input = "This is {customrole}``content` text."
+        result = md.render(markdown_input)
+
+        # Should not be parsed as a complete role
+        assert '<span class="customrole">' not in result
+
+    def test_role_with_unicode(self):
+        """Test role with unicode content."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {customrole}`héllo wörld 你好` example."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">héllo wörld 你好</span>' in result
+
+    def test_line_break_with_backticks_not_parsed(self):
+        """Test that line-break with backticks is not treated as special."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {line-break}`should not work` example."
+        result = md.render(markdown_input)
+
+        # Should render as a normal role, not as a line break
+        assert '<span class="line-break">should not work</span>' in result
+        assert result.count("<br/>") == 0
+
+    def test_empty_role_name(self):
+        """Test that empty role names are not parsed."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is {}`content` not valid."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">' not in result
+
+    def test_role_name_with_spaces_not_valid(self):
+        """Test that role names with spaces are not parsed."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is {role name}`content` not valid."
+        result = md.render(markdown_input)
+
+        assert '<span class="customrole">' not in result
+
+    def test_consecutive_roles(self):
+        """Test consecutive roles without spaces."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "Text {role1}`one`{role2}`two` here."
+        result = md.render(markdown_input)
+
+        assert '<span class="role1">one</span>' in result
+        assert '<span class="role2">two</span>' in result
+
+    def test_role_with_long_content(self):
+        """Test role with long content."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        long_content = "This is a very long piece of content " * 10
+        markdown_input = f"Text {{customrole}}`{long_content}` here."
+        result = md.render(markdown_input)
+
+        assert f'<span class="customrole">{long_content}</span>' in result

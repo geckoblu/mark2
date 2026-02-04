@@ -65,6 +65,10 @@ div.colophon p {
 	text-align: left;
 }
 
+.right, div.right p {
+	text-align: right;
+}
+
 .noindent, div.noindent p {
 	text-indent: 0;
 }

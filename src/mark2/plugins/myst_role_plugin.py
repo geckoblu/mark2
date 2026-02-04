@@ -1,8 +1,9 @@
 """The content of this file is adapted from mdit_py_plugins.myst_role.myst_role_plugin,
 with modifications to allow empty content roles."""
 
-from collections.abc import Sequence
+import html
 import re
+from collections.abc import Sequence
 
 from markdown_it import MarkdownIt
 from markdown_it.renderer import RendererProtocol
@@ -106,7 +107,8 @@ def myst_role(
     token = tokens[idx]
 
     name = token.meta.get("name", "unknown")
-    if name == "line-break":
+    if name == "line-break" and token.content == "":
         return "<br/>"
     else:
-        return f'<span class="role">{token.content}</span>'
+        content = html.escape(token.content, quote=True)
+        return f'<span class="{name}">{content}</span>'
