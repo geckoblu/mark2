@@ -63,10 +63,16 @@ def configure_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="generate cover for epub",
     )
-    epub_group.add_argument(
+    epub_stylesheet_group = epub_group.add_mutually_exclusive_group()
+    epub_stylesheet_group.add_argument(
         "--epub-stylesheet",
         type=argparsext.FileType("r", extension=["css"]),
         help="stylesheet for epub",
+    )
+    epub_stylesheet_group.add_argument(
+        "--epub-keepstylesheet",
+        action="store_true",
+        help="keep existing stylesheet for epub",
     )
     epub_group.add_argument(
         "--epub-split-at-header",
@@ -120,6 +126,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--epub-generatecover is only valid with --format epub")
     if fmt != "epub" and args.epub_stylesheet:
         parser.error("--epub-stylesheet is only valid with --format epub")
+    if fmt != "epub" and args.epub_keepstylesheet:
+        parser.error("--epub-keepstylesheet is only valid with --format epub")
     if fmt != "epub" and args.epub_split_at_header != "h2":
         parser.error("--epub-split-at-header is only valid with --format epub")
 
@@ -198,6 +206,7 @@ def get_env(args: argparse.Namespace) -> EnvType:
         env["epub_cover"] = args.epub_cover
         env["epub_generatecover"] = args.epub_generatecover
         env["epub_stylesheet"] = args.epub_stylesheet
+        env["epub_keepstylesheet"] = args.epub_keepstylesheet
         env["epub_split_at_header"] = args.epub_split_at_header
 
     if args.format == "md":

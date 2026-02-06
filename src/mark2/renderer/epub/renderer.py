@@ -70,7 +70,10 @@ class EPUBRenderer(RendererHTML):
         cover = env.get("epub_cover", None)
         generate_cover = env.get("epub_generatecover", False)
         stylesheet = env.get("epub_stylesheet", None)
+        keep_stylesheet = env.get("epub_keepstylesheet", False)
         output_filename = env.get("output_filename", "-")
+
+        self.debug = env.get("debug", False)
         self.split_at_header = env.get("epub_split_at_header", "h2")
 
         self.manifest = []
@@ -92,6 +95,10 @@ class EPUBRenderer(RendererHTML):
         if stylesheet is not None:
             with open(stylesheet, "r", encoding="utf-8") as f:
                 stylesheet_content = f.read()
+        elif keep_stylesheet:
+            stylesheet_content = self._read_stylesheet_from_existing_epub(output_filename)
+            if stylesheet_content is None:
+                stylesheet_content = DEFAULT_STYLESHEET
         else:
             stylesheet_content = DEFAULT_STYLESHEET
 
@@ -133,6 +140,31 @@ class EPUBRenderer(RendererHTML):
         finally:
             # Clean up temporary file
             Path(tmp_path).unlink(missing_ok=True)
+
+    def _read_stylesheet_from_existing_epub(self, epub_path: str) -> str | None:
+        """Read existing stylesheet from an EPUB file if it exists.
+
+        Args:
+            epub_path: Path to the existing EPUB file
+        Returns:
+            The content of the existing stylesheet if found, otherwise None
+        """
+        if not Path(epub_path).is_file():
+            return None
+
+        try:
+            with zipfile.ZipFile(epub_path, "r") as epub:
+                for item in epub.infolist():
+                    if item.filename.endswith("stylesheet.css"):
+                        with epub.open(item) as f:
+                            if self.debug:
+                                print(f"Found existing stylesheet in {epub_path}, reusing it.")
+                            return f.read().decode("utf-8")
+        except zipfile.BadZipFile:
+            # Not a valid ZIP file, ignore and return None
+            pass
+
+        return None
 
     def _write_cover(self, epub: zipfile.ZipFile, cover: str | None) -> None:
         """Write cover image to the EPUB archive if provided.
