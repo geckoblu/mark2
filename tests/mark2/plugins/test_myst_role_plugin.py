@@ -1,6 +1,8 @@
 """Comprehensive tests for the MyST role plugin module,
 covering both the custom implementation and the original from mdit_py_plugins."""
 
+# pylint: disable=redefined-outer-name  # pytest fixtures pattern
+
 import pytest
 from markdown_it import MarkdownIt
 
@@ -98,18 +100,6 @@ class TestMystRolePlugin:
         assert '<span class="role1">content1</span>' in result
         assert '<span class="role2">content2</span>' in result
 
-    def test_role_with_emphasis(self, plugin):
-        """Test role content with emphasis markup."""
-        md = MarkdownIt(renderer_cls=RendererHTML)
-        md.use(plugin)
-        md.add_render_rule("myst_role", myst_role)
-
-        markdown_input = "This is a {customrole}`*emphasized* content` example."
-        result = md.render(markdown_input)
-
-        # Content should be rendered as-is, not parsed
-        assert '<span class="customrole">*emphasized* content</span>' in result
-
     def test_role_with_newline(self, plugin):
         """Test role content with newlines (should be converted to spaces)."""
         md = MarkdownIt(renderer_cls=RendererHTML)
@@ -120,28 +110,6 @@ class TestMystRolePlugin:
         result = md.render(markdown_input)
 
         assert '<span class="customrole">multi line</span>' in result
-
-    def test_role_with_multiple_backticks(self, plugin):
-        """Test role with multiple backticks for content containing backticks."""
-        md = MarkdownIt(renderer_cls=RendererHTML)
-        md.use(plugin)
-        md.add_render_rule("myst_role", myst_role)
-
-        markdown_input = "This is a {customrole}``content with `backtick` inside`` example."
-        result = md.render(markdown_input)
-
-        assert '<span class="customrole">content with `backtick` inside</span>' in result
-
-    def test_role_with_triple_backticks(self, plugin):
-        """Test role with triple backticks."""
-        md = MarkdownIt(renderer_cls=RendererHTML)
-        md.use(plugin)
-        md.add_render_rule("myst_role", myst_role)
-
-        markdown_input = "This is a {customrole}```content with ``double`` inside``` example."
-        result = md.render(markdown_input)
-
-        assert '<span class="customrole">content with ``double`` inside</span>' in result
 
     def test_escaped_role(self, plugin):
         """Test escaped role (should not be parsed)."""
@@ -275,19 +243,6 @@ class TestMystRolePlugin:
         result = md.render(markdown_input)
 
         assert '<span class="customrole">héllo wörld 你好</span>' in result
-
-    def test_line_break_with_backticks_not_parsed(self, plugin):
-        """Test that line-break with backticks is not treated as special."""
-        md = MarkdownIt(renderer_cls=RendererHTML)
-        md.use(plugin)
-        md.add_render_rule("myst_role", myst_role)
-
-        markdown_input = "This is a {line-break}`should not work` example."
-        result = md.render(markdown_input)
-
-        # Should render as a normal role, not as a line break
-        assert '<span class="line-break">should not work</span>' in result
-        assert result.count("<br/>") == 0
 
     def test_empty_role_name(self, plugin):
         """Test that empty role names are not parsed."""

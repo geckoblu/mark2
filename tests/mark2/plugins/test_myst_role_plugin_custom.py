@@ -1,6 +1,5 @@
 """Comprehensive tests for the MyST role plugin module, specific for the custom implementation."""
 
-import pytest
 from markdown_it import MarkdownIt
 
 
@@ -53,3 +52,15 @@ class TestMystRolePlugin:
         result = md.render(markdown_input)
 
         assert result.count("<br/>") == 2
+
+    def test_line_break_with_backticks_not_parsed(self):
+        """Test that line-break with backticks is not treated as special."""
+        md = MarkdownIt(renderer_cls=RendererHTML)
+        md.use(myst_role_plugin)
+
+        markdown_input = "This is a {line-break}`should not work` example."
+        result = md.render(markdown_input)
+
+        # Should render as a normal role, not as a line break
+        assert '<span class="line-break">should not work</span>' in result
+        assert result.count("<br/>") == 0

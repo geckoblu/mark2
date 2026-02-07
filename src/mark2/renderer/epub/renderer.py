@@ -51,6 +51,8 @@ class EPUBRenderer(RendererHTML):
         """
         super().__init__(parser)
 
+        self.debug = False  # Enable debug logging if needed
+
         self.manifest = []  # Store (id, href, media-type) tuples
         self.spine = []  # Store itemref ids for content.opf
         self.guide = []  # Store guide entries for content.opf

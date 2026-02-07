@@ -91,6 +91,11 @@ def _myst_role_parser(state: StateInline, silent: bool) -> bool:
         token.meta = {"name": name}
         token.content = content
 
+        # Parse inline markdown in the content
+        inline_tokens = state.md.parseInline(content, state.env)
+        if inline_tokens and inline_tokens[0].children:
+            token.children = inline_tokens[0].children
+
     state.pos = pos + match.end() + 1
 
     return True
@@ -110,5 +115,9 @@ def myst_role(
     if name == "line-break" and token.content == "":
         return "<br/>"
     else:
-        content = html.escape(token.content, quote=True)
+        # Render child tokens if markdown was parsed, otherwise escape content
+        if token.children:
+            content = renderer.renderInline(token.children, options, env)
+        else:
+            content = html.escape(token.content, quote=True)
         return f'<span class="{name}">{content}</span>'
