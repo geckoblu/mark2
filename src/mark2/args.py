@@ -61,7 +61,14 @@ def configure_parser() -> argparse.ArgumentParser:
     epub_cover_group.add_argument(
         "--epub-generatecover",
         action="store_true",
-        help="generate cover for epub",
+        # Hidden for now since it doesn't work well and needs more work to be usable
+        # help="generate cover for epub",
+        help=argparse.SUPPRESS,
+    )
+    epub_group.add_argument(
+        "--epub-generatefrontpage",
+        action="store_true",
+        help="generate frontpage for epub",
     )
     epub_stylesheet_group = epub_group.add_mutually_exclusive_group()
     epub_stylesheet_group.add_argument(
@@ -124,6 +131,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--epub-cover is only valid with --format epub")
     if fmt != "epub" and args.epub_generatecover:
         parser.error("--epub-generatecover is only valid with --format epub")
+    if fmt != "epub" and args.epub_generatefrontpage:
+        parser.error("--epub-generatefrontpage is only valid with --format epub")
     if fmt != "epub" and args.epub_stylesheet:
         parser.error("--epub-stylesheet is only valid with --format epub")
     if fmt != "epub" and args.epub_keepstylesheet:
@@ -205,6 +214,7 @@ def get_env(args: argparse.Namespace) -> EnvType:
     if args.format == "epub":
         env["epub_cover"] = args.epub_cover
         env["epub_generatecover"] = args.epub_generatecover
+        env["epub_generatefrontpage"] = args.epub_generatefrontpage
         env["epub_stylesheet"] = args.epub_stylesheet
         env["epub_keepstylesheet"] = args.epub_keepstylesheet
         env["epub_split_at_header"] = args.epub_split_at_header

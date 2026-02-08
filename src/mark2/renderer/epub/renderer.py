@@ -14,7 +14,8 @@ from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
 from mark2.renderer.rendererhtml import RendererHTML
-from mark2.renderer.epub.generatecover import generate_cover as generatecover
+from mark2.renderer.epub.generatecover import generate_cover as _generate_cover
+from mark2.renderer.epub.generatefrontpage import generate_frontpage as _generate_frontpage
 from mark2.renderer.epub.imagesize import get_image_size
 from mark2.renderer.epub.constants import (
     MIMETYPE,
@@ -71,6 +72,7 @@ class EPUBRenderer(RendererHTML):
         """
         cover = env.get("epub_cover", None)
         generate_cover = env.get("epub_generatecover", False)
+        generate_frontpage = env.get("epub_generatefrontpage", False)
         stylesheet = env.get("epub_stylesheet", None)
         keep_stylesheet = env.get("epub_keepstylesheet", False)
         output_filename = env.get("output_filename", "-")
@@ -114,22 +116,32 @@ class EPUBRenderer(RendererHTML):
             with zipfile.ZipFile(tmp_path, "w") as epub:
                 # Add mimetype file
                 epub.writestr("mimetype", MIMETYPE)
+
                 # Add META-INF/container.xml
                 epub.writestr("META-INF/container.xml", CONTAINER_XML)
+
+                # Add frontpage if requested
+                if generate_frontpage:
+                    self._generate_frontpage(epub, doctitle, author)
+
                 # Add cover image if provided
                 if cover is not None:
                     self._write_cover(epub, cover)
                 elif generate_cover:
                     self._generate_cover(epub, doctitle, author)
+
                 # Add content
                 self._write_content(epub, pages)
+
                 # Add content.opf
                 self._write_content_opf(epub, doctitle, epubuuid, metadata)
+
                 # Add toc.ncx
                 epub.writestr(
                     "OEBPS/toc.ncx",
                     TOC_NCX % {"title": doctitle, "navpoints": toctxt, "epubuuid": epubuuid},
                 )
+
                 # Add stylesheet
                 epub.writestr("OEBPS/Styles/stylesheet.css", stylesheet_content)
 
@@ -208,13 +220,25 @@ class EPUBRenderer(RendererHTML):
             doctitle: Title of the EPUB
             author: Author of the EPUB
         """
-        svgcover = generatecover(doctitle, author)
+        svgcover = _generate_cover(doctitle, author)
         epub.writestr(
             "OEBPS/cover.xhtml",
             COVER_XHTML_GENERATED % {"svgcover": svgcover},
         )
         self.manifest.append(("cover.xhtml", "cover.xhtml", "application/xhtml+xml"))
         self.spine.insert(0, "cover.xhtml")
+
+    def _generate_frontpage(self, epub: zipfile.ZipFile, doctitle: str, author: str) -> None:
+        """Generate a simple HTML frontpage and add it to the EPUB archive.
+        Args:
+            epub: ZipFile object representing the EPUB archive
+            doctitle: Title of the EPUB
+            author: Author of the EPUB
+        """
+        frontpage_html = _generate_frontpage(doctitle, author)
+        epub.writestr("OEBPS/frontpage.xhtml", frontpage_html)
+        self.manifest.append(("frontpage.xhtml", "frontpage.xhtml", "application/xhtml+xml"))
+        self.spine.insert(0, "frontpage.xhtml")
 
     def _generate_content(
         self, tokens: list[Token], options: OptionsDict, env: EnvType
