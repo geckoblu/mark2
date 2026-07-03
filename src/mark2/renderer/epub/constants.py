@@ -7,70 +7,79 @@ including XML templates, XHTML templates, and default stylesheets.
 MIMETYPE = "application/epub+zip"
 
 DEFAULT_STYLESHEET = """h1 {
-  text-indent: 0;
-	text-align: center;
+    text-indent: 0;
+    text-align: center;
 }
 
 h2 {
-	page-break-before: always;
-	text-indent: 0;
-	text-align: center;
+    page-break-before: always;
+    text-indent: 0;
+    text-align: center;
 }
 
 p {
-  margin: 0;
-  text-align: justify;
-  text-indent: 1em;
+    margin: 0;
+    text-align: justify;
+    text-indent: 1em;
 }
 
 sup {
-  font-size: 0.75em;
-  line-height: 0;
-  vertical-align: super;
+    font-size: 0.75em;
+    line-height: 0;
+    vertical-align: super;
 }
 
 a {
-  text-decoration: none;
+    text-decoration: none;
 }
 
 blockquote p {
-	text-indent: 0;
+    text-indent: 0;
 }
 
 div.footnotes {
-  margin-top: 2em;
+    margin-top: 2em;
 }
 
 div.footnote p {
-  font-size: 0.8em;
-  margin: 1em 1em 1em 2em;
-  text-indent: -1em;
+    font-size: 0.8em;
+    margin: 1em 1em 0em 2em;
+    text-indent: -1em;
+}
+
+div.footnote p~p {
+    margin: 0em 1em 0em 2em;
+    text-indent: 0em;
 }
 
 div.colophon {
-	margin: 2em;
-	font-size: 0.85em;
+    margin: 2em;
+    font-size: 0.85em;
 }
 
 div.colophon p {
-	text-indent: 0;
+    text-indent: 0;
 }
 
-.center, div.center p {
-	text-indent: 0;
-	text-align: center;
+.center,
+div.center p {
+    text-indent: 0;
+    text-align: center;
 }
 
-.left, div.left p {
-	text-align: left;
+.left,
+div.left p {
+    text-align: left;
 }
 
-.right, div.right p {
-	text-align: right;
+.right,
+div.right p {
+    text-align: right;
 }
 
-.noindent, div.noindent p {
-	text-indent: 0;
+.noindent,
+div.noindent p {
+    text-indent: 0;
 }
 """
 

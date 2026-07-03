@@ -57,7 +57,7 @@ HTML_FOOTER = """
 """
 
 DEFAULT_STYLESHEET = """h2 {
-	page-break-before: always;
+    page-break-before: always;
 }
 
 p {
