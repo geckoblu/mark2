@@ -19,7 +19,7 @@ def configure_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
-    output_choices = ["html", "epub", "pdf", "tex"]  # disabled "md" for now
+    output_choices = ["html", "epub", "pdf"]  # disabled "md" for now
 
     parser = argparse.ArgumentParser(
         description="Convert a Markdown file to various output formats.",
@@ -88,6 +88,14 @@ def configure_parser() -> argparse.ArgumentParser:
         help="header level at which to split content into separate pages [default: %(default)s]",
     )
 
+    # PDF options --------------------------------
+    pdf_group = parser.add_argument_group("PDF options")
+    pdf_group.add_argument(
+        "--keep-tex",
+        action="store_true",
+        help="keep intermediate .tex file generated during PDF output",
+    )
+
     # MARKDOWN options ---------------------------
     # markdown_group = parser.add_argument_group("MARKDOWN options")
     # markdown_group.add_argument(
@@ -105,6 +113,7 @@ def configure_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("-q", "--quiet", action="store_true", help="suppress non-error messages")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--debug-tokens", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
         "--link-check",
         action="store_true",
@@ -139,6 +148,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--epub-keepstylesheet is only valid with --format epub")
     if fmt != "epub" and args.epub_split_at_header != "h2":
         parser.error("--epub-split-at-header is only valid with --format epub")
+    if fmt != "pdf" and args.keep_tex:
+        parser.error("--keep-tex is only valid with --format pdf")
 
     # if fmt != "md" and args.md_word_wrap:
     #     parser.error("--md-word-wrap is only valid with --format md")
@@ -210,6 +221,7 @@ def get_env(args: argparse.Namespace) -> EnvType:
     env["output_format"] = args.format
     env["quiet"] = args.quiet
     env["debug"] = args.debug
+    env["debug_tokens"] = args.debug_tokens
 
     if args.format == "epub":
         env["epub_cover"] = args.epub_cover
@@ -218,6 +230,9 @@ def get_env(args: argparse.Namespace) -> EnvType:
         env["epub_stylesheet"] = args.epub_stylesheet
         env["epub_keepstylesheet"] = args.epub_keepstylesheet
         env["epub_split_at_header"] = args.epub_split_at_header
+
+    if args.format == "pdf":
+        env["keep_tex"] = args.keep_tex
 
     if args.format == "md":
         if args.md_word_wrap is None:

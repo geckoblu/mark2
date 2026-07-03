@@ -7,3 +7,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 
+tests/assets/TEST-CONTEXT.pdf
+tests/assets/TEST-CONTEXT.tex
+tests/assets/TEST-CONTEXT.log
+tests/assets/TEST-CONTEXT.tuc

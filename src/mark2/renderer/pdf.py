@@ -10,7 +10,7 @@ from typing import Sequence
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
-from mark2.renderer.context import ConTeXtRenderer
+from mark2.renderer.context.renderer import ConTeXtRenderer
 
 
 class PDFRenderer(ConTeXtRenderer):
@@ -35,6 +35,7 @@ class PDFRenderer(ConTeXtRenderer):
         """
 
         output_filename = env.get("output_filename", "-")
+        keep_tex = env.get("keep_tex", False)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             p = Path(tmpdir) / "temp.tex"
@@ -77,4 +78,9 @@ class PDFRenderer(ConTeXtRenderer):
                     sys.stdout.buffer.write(f.read())
             else:
                 shutil.copy(pdf, output_filename)
+                if keep_tex:
+                    if p.exists():
+                        shutil.copy(p, Path(output_filename).with_suffix(".tex"))
+                    else:
+                        print("Warning: .tex file was not found to keep", file=sys.stderr)
         # directory removed at the end of the with block

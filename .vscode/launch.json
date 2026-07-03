@@ -34,10 +34,30 @@
             },
             "args": [
                 "-f",
-                "tex",
-                "./README.md",
+                "pdf",
+                "./tests/assets/TEST-CONTEXT.md",
+                "--keep-tex",
+                "--debug-tokens"
+            ]
+        },
+        {
+            "name": "mark2 Greco Antico",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/mark2/main.py",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "-f",
+                "pdf",
+                "~/work/epub/grecoantico/grecoantico.md",
                 "-o",
-                "-"
+                "~/tmp/",
+                "--keep-tex",
+                "--debug-tokens"
             ]
         },
         {
@@ -104,7 +124,7 @@
             },
             "args": [
                 "--reference",
-                "./tests/assets/TEST-NOTES2.md",
+                "./tests/assets/TEST-CONTEXT.md",
             ]
         },
         {

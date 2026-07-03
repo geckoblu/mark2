@@ -7,6 +7,7 @@ markdown to PDF documents by generating ConTeXt and compiling to PDF.
 import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from markdown_it import MarkdownIt
@@ -21,6 +22,35 @@ class TestPDFRenderer:
         """Test that PDFRenderer has correct output format."""
         renderer = PDFRenderer()
         assert renderer.__output__ == "pdf"
+
+    def test_keep_tex_writes_tex_file(self, tmp_path, monkeypatch):
+        """Test that keep_tex preserves the intermediate .tex output."""
+        renderer = PDFRenderer()
+        tokens = []
+        options = {}
+        output_pdf = tmp_path / "output.pdf"
+
+        def fake_context_render(self, _tokens, _options, env):
+            Path(env["output_filename"]).write_text("\\starttext\\stoptext", encoding="utf-8")
+
+        def fake_subprocess_run(_cmd, cwd, capture_output, text, check):
+            del capture_output, text, check
+            temp_tex = Path(cwd) / "temp.tex"
+            if temp_tex.exists():
+                temp_tex.unlink()
+            (Path(cwd) / "temp.pdf").write_bytes(b"%PDF-")
+            return mock.Mock(returncode=0, stderr="")
+
+        monkeypatch.setattr(
+            "mark2.renderer.context.renderer.ConTeXtRenderer.render", fake_context_render
+        )
+        monkeypatch.setattr("subprocess.run", fake_subprocess_run)
+
+        env = {"output_filename": str(output_pdf), "keep_tex": True}
+        renderer.render(tokens, options, env)
+
+        assert output_pdf.exists()
+        assert output_pdf.with_suffix(".tex").exists()
 
     @pytest.mark.skipif(not shutil.which("context"), reason="context command not installed")
     def test_basic_pdf_creation(self):

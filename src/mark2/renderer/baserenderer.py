@@ -2,6 +2,7 @@
 
 import inspect
 import sys
+from collections import Counter
 from typing import Any, Sequence
 
 from markdown_it.renderer import RendererProtocol, Token
@@ -22,6 +23,9 @@ class BaseRenderer(RendererProtocol):
         Args:
             parser: Optional parser instance
         """
+        self.debug_tokens = False
+        self.tokens_counter = Counter()  # used for debug_tokens only
+
         self.rules = {
             k: v
             for k, v in inspect.getmembers(self, predicate=inspect.ismethod)
@@ -36,6 +40,8 @@ class BaseRenderer(RendererProtocol):
         :param env: additional data from parsed input
 
         """
+        self.debug_tokens = env.get("debug_tokens", False)
+
         for i, token in enumerate(tokens):
             if token.type == "inline":
                 if token.children:
@@ -44,6 +50,13 @@ class BaseRenderer(RendererProtocol):
                 self.rules[token.type](tokens, i, options, env)
             else:
                 self.render_token(tokens, i, options, env)
+
+        if self.debug_tokens and self.tokens_counter:
+            print("", file=sys.stderr)
+            print("--- Token type counts ----------------------------------------", file=sys.stderr)
+            # for token_type, count in self.tokens_counter.most_common():
+            for token_type, count in sorted(self.tokens_counter.items(), key=lambda x: x[1]):
+                print(f"{token_type}: {count}", file=sys.stderr)
 
     def render_inline(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
         """The same as ``render``, but for single token of `inline` type.
@@ -74,7 +87,10 @@ class BaseRenderer(RendererProtocol):
         """
         # raise NotImplementedError(f"[{tokens[idx]}]")
         print(f"[UNHANDLED TOKEN] {tokens[idx]}", file=sys.stderr)
-        sys.exit(1)
+        if self.debug_tokens:
+            self.tokens_counter[tokens[idx].type] += 1
+        else:
+            sys.exit(1)
 
     ###########################################################################
     # front_matter_plugin renderers

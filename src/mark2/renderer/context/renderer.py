@@ -1,21 +1,20 @@
-"""Minimal ConTeXt renderer compatible with markdown-it."""
+"""ConTeXt renderer for converting Markdown to ConTeXt format."""
 
 from typing import Any, Sequence
 
 from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
-from mark2.renderer.baserenderer import BaseRenderer
 from mark2.renderer.util import open_output
+from mark2.renderer.baserenderer import BaseRenderer
+from mark2.renderer.context.header_a5 import CONTEXT_HEADER_A5
+from mark2.renderer.context.header_a4 import CONTEXT_HEADER_A4
 
 
 class ConTeXtRenderer(BaseRenderer):
     """A minimal ConTeXt renderer for markdown-it tokens."""
 
-    __output__: str = "text"
     result: list[str]
-    in_link: bool
-    link_href: str
 
     def __init__(self, parser: Any = None) -> None:
         """Initialize the renderer.
@@ -26,9 +25,7 @@ class ConTeXtRenderer(BaseRenderer):
         super().__init__(parser)
 
         self.result = []
-
-        self.in_link = False
-        self.link_href = ""
+        self.in_list_item = False
 
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
         """Takes token stream and generates ConTeXt output.
@@ -40,10 +37,11 @@ class ConTeXtRenderer(BaseRenderer):
         """
 
         self.result = []
+        filtered = self._populate_reference_footnotes(tokens, env)
 
-        self.result.append(CONTEXT_HEADER)
+        self.result.append(CONTEXT_HEADER_A5)
 
-        super().render(tokens, options, env)
+        super().render(filtered, options, env)
 
         self.result.append(CONTEXT_FOOTER)
 
@@ -92,7 +90,8 @@ class ConTeXtRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render closing paragraph token."""
-        self.result.append("\n\n")
+        if not self.in_list_item:
+            self.result.append("\n\n")
 
     def text(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
         """Render text token."""
@@ -109,6 +108,18 @@ class ConTeXtRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render closing emphasis token."""
+        self.result.append("}")
+
+    def strong_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening strong/bold token."""
+        self.result.append("{\\bf ")
+
+    def strong_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing strong/bold token."""
         self.result.append("}")
 
     def heading_open(
@@ -161,13 +172,15 @@ class ConTeXtRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render opening list item token."""
+        self.in_list_item = True
         self.result.append("\\item ")
 
     def list_item_close(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render closing list item token."""
-        pass
+        self.in_list_item = False
+        self.result.append("\n")
 
     def link_open(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
@@ -185,17 +198,35 @@ class ConTeXtRenderer(BaseRenderer):
         self.result.append(f"}}[url({self.link_href})]")
         self.in_link = False
 
-    def strong_open(
+    def blockquote_open(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
-        """Render opening strong/bold token."""
-        self.result.append("{\\bf ")
+        """Render opening blockquote token."""
+        self.result.append("\\startBlockquote\n")
 
-    def strong_close(
+    def blockquote_close(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
-        """Render closing strong/bold token."""
-        self.result.append("}")
+        """Render closing blockquote token."""
+        self.result.append("\\stopBlockquote\n\n")
+
+    def pagebreak(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render page break token."""
+        self.result.append("\\page\n\n")
+
+    def hardbreak(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render hard line break token."""
+        self.result.append("\\crlf\n")
+
+    def softbreak(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render soft line break token."""
+        self.result.append("\n")
 
     def code_inline(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
@@ -213,90 +244,141 @@ class ConTeXtRenderer(BaseRenderer):
         self.result.append(token.content)
         self.result.append("\\stoptyping\n\n")
 
-    def fence(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
-        """Render fenced code block token."""
-        token = tokens[idx]
-        # ConTeXt doesn't have built-in syntax highlighting in the same way,
-        # but we can use typing environment
-        self.result.append("\\starttyping\n")
-        self.result.append(token.content)
-        self.result.append("\\stoptyping\n\n")
+    ###########################################################################
+    # Footnote methods
+    ###########################################################################
 
-    def blockquote_open(
+    def _render_inline_tokens(self, children: list[Token]) -> str:
+        """Render inline token children to a ConTeXt markup string."""
+        parts: list[str] = []
+        for child in children:
+            if child.type == "text":
+                parts.append(self._escape_tex(child.content))
+            elif child.type == "code_inline":
+                parts.append(f"\\type{{{child.content}}}")
+            elif child.type == "em_open":
+                parts.append("{\\em ")
+            elif child.type == "em_close":
+                parts.append("}")
+            elif child.type == "strong_open":
+                parts.append("{\\bf ")
+            elif child.type == "strong_close":
+                parts.append("}")
+            elif child.type in ("softbreak", "hardbreak"):
+                parts.append(" ")
+        return "".join(parts)
+
+    def footnote_ref(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
-        """Render opening blockquote token."""
-        self.result.append("\\startblockquote\n")
+        """Render footnote reference in the text."""
+        footnote_id = tokens[idx].meta.get("id")
+        foot_note = env.get("footnotes", {}).get("list", {}).get(footnote_id, {})
+        if "tokens" in foot_note:
+            content = self._render_inline_tokens(foot_note["tokens"])
+        else:
+            content = foot_note.get("content", "")
+        self.result.append(
+            "{\\setupinteraction[color=black,contrastcolor=black]"
+            + f"\\footnote{{{content}}}"
+            + "}"
+        )
 
-    def blockquote_close(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> None:
-        """Render closing blockquote token."""
-        self.result.append("\\stopblockquote\n\n")
+    def _populate_reference_footnotes(self, tokens: Sequence[Token], env: EnvType) -> list[Token]:
+        """Populate env footnotes for reference-style notes and return filtered token list.
 
-    def hr(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
-        """Render horizontal rule token."""
-        self.result.append("\\thinrule\n\n")
+        Supports both plugin modes:
+        - with footnote_tail: content is in footnote_block_open ... footnote_block_close
+        - without footnote_tail: content is in footnote_reference_open ... footnote_reference_close
 
-    def image(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
-        """Render image token."""
-        token = tokens[idx]
-        src = token.attrGet("src") or ""
-        alt = token.attrGet("alt") or ""
-        # ConTeXt image inclusion
-        self.result.append(f"\\externalfigure[{src}]")
-        if alt:
-            self.result.append(f"[{alt}]")
-        self.result.append("\n")
+        In both cases, reference note text is extracted into
+        env['footnotes']['list'][id]['content'] and note-definition tokens are
+        filtered out from the stream so they are never rendered as body text
+        (ConTeXt/PDF use inline \footnote{}).
+        """
+        footnotes = env.get("footnotes", {})
+        fn_list = env.get("footnotes", {}).get("list", {})
+        refs = footnotes.get("refs", {})
 
-    def hardbreak(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> None:
-        """Render hard line break token."""
-        self.result.append("\\crlf\n")
+        in_reference = False
+        current_ref_id: int | None = None
+        ref_parts: list[str] = []
 
-    def softbreak(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> None:
-        """Render soft line break token."""
-        self.result.append("\n")
+        in_footnote_block = False
+        in_footnote = False
+        current_id: int | None = None
+        filtered: list[Token] = []
 
-    def html_block(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> None:
-        """Render HTML block token."""
-        # ConTeXt can't render HTML directly, so we skip it or add a comment
-        token = tokens[idx]
-        self.result.append(f"% HTML block skipped: {token.content[:50]}...\n")
+        for tok in tokens:
+            if tok.type == "footnote_reference_open":
+                in_reference = True
+                label = tok.meta.get("label", "")
+                current_ref_id = refs.get(":" + label)
+                ref_parts = []
+                continue
 
-    def html_inline(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> None:
-        """Render inline HTML token."""
-        # ConTeXt can't render HTML directly, so we skip it
-        pass
+            if tok.type == "footnote_reference_close":
+                in_reference = False
+                if current_ref_id is not None and "content" not in fn_list.get(current_ref_id, {}):
+                    fn_list.setdefault(current_ref_id, {})["content"] = "".join(ref_parts).strip()
+                current_ref_id = None
+                continue
 
-    def s_open(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
-        """Render opening strikethrough token."""
-        self.result.append("\\overstrike{")
+            if in_reference:
+                if tok.type == "inline" and tok.children:
+                    ref_parts.append(self._render_inline_tokens(tok.children))
+                continue
 
-    def s_close(
-        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
-    ) -> None:
-        """Render closing strikethrough token."""
-        self.result.append("}")
+            if tok.type == "footnote_block_open":
+                in_footnote_block = True
+                continue
+
+            if tok.type == "footnote_block_close":
+                in_footnote_block = False
+                continue
+
+            if not in_footnote_block:
+                filtered.append(tok)
+                continue
+
+            # Inside footnote block — skip all tokens (they are never rendered
+            # directly), but extract content for reference notes.
+            if tok.type == "footnote_open":
+                in_footnote = True
+                current_id = tok.meta.get("id")
+                continue
+
+            if tok.type == "footnote_close":
+                in_footnote = False
+                current_id = None
+                continue
+
+            if in_footnote and tok.type == "inline" and tok.children and current_id is not None:
+                foot_note = fn_list.get(current_id, {})
+                # Only extract for reference notes ("label" but no "tokens")
+                if "label" in foot_note and "tokens" not in foot_note:
+                    if "content" not in foot_note:
+                        fn_list.setdefault(current_id, {})["content"] = self._render_inline_tokens(
+                            tok.children
+                        )
+
+        return filtered
+
+    ###########################################################################
+    # Table methods
+    ###########################################################################
 
     def table_open(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render opening table token."""
-        self.result.append("\\startTABLE\n")
+        self.result.append("\\bTABLE\n")
 
     def table_close(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render closing table token."""
-        self.result.append("\\stopTABLE\n\n")
+        self.result.append("\\eTABLE\n\n")
 
     def thead_open(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
@@ -358,11 +440,6 @@ class ConTeXtRenderer(BaseRenderer):
         """Render closing table data cell token."""
         self.result.append(" \\eTD\n")
 
-
-CONTEXT_HEADER = """% !TeX program = context
-% ConTeXt Mk XL (LuaMetaTeX)
-\\starttext
-"""
 
 CONTEXT_FOOTER = """\\stoptext
 """

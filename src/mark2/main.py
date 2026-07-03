@@ -48,11 +48,12 @@ def read_data(input_filename: str) -> str:
     return data
 
 
-def set_plugins(md: MarkdownIt) -> None:
+def set_plugins(md: MarkdownIt, output_format: str | None = None) -> None:
     """Set up plugins for the MarkdownIt parser.
 
     Args:
         md: MarkdownIt parser instance
+        output_format: Selected output format used for format-specific plugin behavior
     """
     md.enable("table")
     md.enable("strikethrough")
@@ -66,18 +67,20 @@ def set_plugins(md: MarkdownIt) -> None:
     md.use(myst_role_plugin)
     md.use(pagebreak_plugin)
 
-    set_footnote_plugin(md)
+    set_footnote_plugin(md, move_to_end=(output_format != "pdf"))
 
 
-def set_footnote_plugin(md: MarkdownIt) -> None:
+def set_footnote_plugin(md: MarkdownIt, move_to_end: bool = True) -> None:
     """Set up the Footnote plugin with custom render rules.
 
     Args:
         md: MarkdownIt parser instance
+        move_to_end: Whether to move footnotes to document tail
     """
-    md.use(footnote_plugin, move_to_end=True)
+    md.use(footnote_plugin, move_to_end=move_to_end)
 
-    md.core.ruler.at("footnote_tail", mark2_footnote_plugin.footnote_tail)
+    if move_to_end:
+        md.core.ruler.at("footnote_tail", mark2_footnote_plugin.footnote_tail)
     # helpers (only used in other rules, no tokens are attached to those)
     md.add_render_rule("footnote_caption", mark2_footnote_plugin.render_footnote_caption)
     md.add_render_rule("footnote_anchor_name", mark2_footnote_plugin.render_footnote_anchor_name)
@@ -148,7 +151,7 @@ def main() -> None:
         raise ValueError(f"Unsupported format: {args.format}")
 
     md = MarkdownIt("commonmark", renderer_cls=renderer_cls)
-    set_plugins(md)
+    set_plugins(md, output_format=args.format)
 
     md.render(data, env=env)
 
