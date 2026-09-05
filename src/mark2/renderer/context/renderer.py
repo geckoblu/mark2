@@ -39,7 +39,9 @@ class ConTeXtRenderer(BaseRenderer):
         self.result = []
         filtered = self._populate_reference_footnotes(tokens, env)
 
-        self.result.append(CONTEXT_HEADER_A5)
+        page_format = env.get("pdf_page_format", "A4")
+        header = CONTEXT_HEADER_A5 if page_format == "A5" else CONTEXT_HEADER_A4
+        self.result.append(header)
 
         super().render(filtered, options, env)
 

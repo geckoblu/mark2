@@ -13,6 +13,7 @@ import pytest
 from markdown_it import MarkdownIt
 
 from mark2.renderer.pdf import PDFRenderer
+from mark2.renderer.context.renderer import ConTeXtRenderer
 
 
 class TestPDFRenderer:
@@ -22,6 +23,36 @@ class TestPDFRenderer:
         """Test that PDFRenderer has correct output format."""
         renderer = PDFRenderer()
         assert renderer.__output__ == "pdf"
+
+    @pytest.mark.parametrize(
+        "page_format, header", [("A4", "\\setuppapersize[A4]"), ("A5", "\\setuppapersize[A5]")]
+    )
+    def test_pdf_page_format_selects_header(self, page_format, header, tmp_path, monkeypatch):
+        """PDF page format selects the matching ConTeXt header."""
+        written = {}
+
+        def fake_open_output(filename):
+            class Writer:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *_args):
+                    return False
+
+                def write(self, content):
+                    written["content"] = written.get("content", "") + content
+
+            return Writer()
+
+        monkeypatch.setattr("mark2.renderer.context.renderer.open_output", fake_open_output)
+        renderer = ConTeXtRenderer()
+        renderer.render(
+            [],
+            {},
+            {"output_filename": str(tmp_path / "output.tex"), "pdf_page_format": page_format},
+        )
+
+        assert header in written["content"]
 
     def test_pdf_keep_tex_writes_tex_file(self, tmp_path, monkeypatch):
         """Test that pdf_keep_tex preserves the intermediate .tex output."""

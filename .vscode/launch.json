@@ -36,7 +36,9 @@
                 "-f",
                 "pdf",
                 "./tests/assets/TEST-CONTEXT.md",
-                "--keep-tex",
+                "--pdf-keep-tex",
+                "--pdf-page-format",
+                "A4",
                 "--debug-tokens"
             ]
         },

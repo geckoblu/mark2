@@ -64,8 +64,7 @@ CONTEXT_HEADER_A4 = r"""% !TeX program = context
      n=2,
      bodyfont=11pt]
 \setupnotation[footnote]
-    [number=no,
-     textcolor=black,
+    [textcolor=black,
      color=black,
      interactioncolor=black]
 \setupnote[footnote]

@@ -95,6 +95,12 @@ def configure_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="keep intermediate .tex file generated during PDF output",
     )
+    pdf_group.add_argument(
+        "--pdf-page-format",
+        choices=["A4", "A5"],
+        default="A4",
+        help="page format for PDF output (choices: %(choices)s) [default: %(default)s]",
+    )
 
     # MARKDOWN options ---------------------------
     # markdown_group = parser.add_argument_group("MARKDOWN options")
@@ -150,6 +156,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--epub-split-at-header is only valid with --format epub")
     if fmt != "pdf" and args.pdf_keep_tex:
         parser.error("--pdf-keep-tex is only valid with --format pdf")
+    if fmt != "pdf" and args.pdf_page_format != "A4":
+        parser.error("--pdf-page-format is only valid with --format pdf")
 
     # if fmt != "md" and args.md_word_wrap:
     #     parser.error("--md-word-wrap is only valid with --format md")
@@ -233,6 +241,7 @@ def get_env(args: argparse.Namespace) -> EnvType:
 
     if args.format == "pdf":
         env["pdf_keep_tex"] = args.pdf_keep_tex
+        env["pdf_page_format"] = args.pdf_page_format
 
     if args.format == "md":
         if args.md_word_wrap is None:
