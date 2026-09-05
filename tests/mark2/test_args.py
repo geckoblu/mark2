@@ -42,32 +42,32 @@ class TestArgs:
         env = get_env(args)
         assert env["debug_tokens"] is True
 
-    def test_keep_tex_valid_with_pdf_format(self, monkeypatch, tmp_path):
-        """`--keep-tex` is accepted when generating PDF output."""
+    def test_pdf_keep_tex_valid_with_pdf_format(self, monkeypatch, tmp_path):
+        """`--pdf-keep-tex` is accepted when generating PDF output."""
         input_file = tmp_path / "input.md"
         input_file.write_text("# Title\n", encoding="utf-8")
 
         monkeypatch.setattr(
             "sys.argv",
-            ["mark2", str(input_file), "--format", "pdf", "--keep-tex"],
+            ["mark2", str(input_file), "--format", "pdf", "--pdf-keep-tex"],
         )
 
         args = parse_args()
 
         assert args.format == "pdf"
-        assert args.keep_tex is True
+        assert args.pdf_keep_tex is True
 
         env = get_env(args)
-        assert env["keep_tex"] is True
+        assert env["pdf_keep_tex"] is True
 
-    def test_keep_tex_rejected_for_non_pdf_format(self, monkeypatch, tmp_path):
-        """`--keep-tex` fails validation for non-PDF formats."""
+    def test_pdf_keep_tex_rejected_for_non_pdf_format(self, monkeypatch, tmp_path):
+        """`--pdf-keep-tex` fails validation for non-PDF formats."""
         input_file = tmp_path / "input.md"
         input_file.write_text("# Title\n", encoding="utf-8")
 
         monkeypatch.setattr(
             "sys.argv",
-            ["mark2", str(input_file), "--format", "html", "--keep-tex"],
+            ["mark2", str(input_file), "--format", "html", "--pdf-keep-tex"],
         )
 
         with pytest.raises(SystemExit) as err:
@@ -75,8 +75,8 @@ class TestArgs:
 
         assert err.value.code == 2
 
-    def test_keep_tex_default_is_false(self, monkeypatch, tmp_path):
-        """`--keep-tex` defaults to False for PDF generation."""
+    def test_pdf_keep_tex_default_is_false(self, monkeypatch, tmp_path):
+        """`--pdf-keep-tex` defaults to False for PDF generation."""
         input_file = tmp_path / "input.md"
         input_file.write_text("# Title\n", encoding="utf-8")
 
@@ -87,7 +87,7 @@ class TestArgs:
 
         args = parse_args()
 
-        assert args.keep_tex is False
+        assert args.pdf_keep_tex is False
 
         env = get_env(args)
-        assert env["keep_tex"] is False
+        assert env["pdf_keep_tex"] is False

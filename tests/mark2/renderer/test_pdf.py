@@ -23,8 +23,8 @@ class TestPDFRenderer:
         renderer = PDFRenderer()
         assert renderer.__output__ == "pdf"
 
-    def test_keep_tex_writes_tex_file(self, tmp_path, monkeypatch):
-        """Test that keep_tex preserves the intermediate .tex output."""
+    def test_pdf_keep_tex_writes_tex_file(self, tmp_path, monkeypatch):
+        """Test that pdf_keep_tex preserves the intermediate .tex output."""
         renderer = PDFRenderer()
         tokens = []
         options = {}
@@ -46,7 +46,7 @@ class TestPDFRenderer:
         )
         monkeypatch.setattr("subprocess.run", fake_subprocess_run)
 
-        env = {"output_filename": str(output_pdf), "keep_tex": True}
+        env = {"output_filename": str(output_pdf), "pdf_keep_tex": True}
         renderer.render(tokens, options, env)
 
         assert output_pdf.exists()

@@ -35,7 +35,7 @@ class PDFRenderer(ConTeXtRenderer):
         """
 
         output_filename = env.get("output_filename", "-")
-        keep_tex = env.get("keep_tex", False)
+        pdf_keep_tex = env.get("pdf_keep_tex", False)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             p = Path(tmpdir) / "temp.tex"
@@ -78,7 +78,7 @@ class PDFRenderer(ConTeXtRenderer):
                     sys.stdout.buffer.write(f.read())
             else:
                 shutil.copy(pdf, output_filename)
-                if keep_tex:
+                if pdf_keep_tex:
                     if p.exists():
                         shutil.copy(p, Path(output_filename).with_suffix(".tex"))
                     else:

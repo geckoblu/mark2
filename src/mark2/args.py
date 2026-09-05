@@ -91,7 +91,7 @@ def configure_parser() -> argparse.ArgumentParser:
     # PDF options --------------------------------
     pdf_group = parser.add_argument_group("PDF options")
     pdf_group.add_argument(
-        "--keep-tex",
+        "--pdf-keep-tex",
         action="store_true",
         help="keep intermediate .tex file generated during PDF output",
     )
@@ -148,8 +148,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--epub-keepstylesheet is only valid with --format epub")
     if fmt != "epub" and args.epub_split_at_header != "h2":
         parser.error("--epub-split-at-header is only valid with --format epub")
-    if fmt != "pdf" and args.keep_tex:
-        parser.error("--keep-tex is only valid with --format pdf")
+    if fmt != "pdf" and args.pdf_keep_tex:
+        parser.error("--pdf-keep-tex is only valid with --format pdf")
 
     # if fmt != "md" and args.md_word_wrap:
     #     parser.error("--md-word-wrap is only valid with --format md")
@@ -232,7 +232,7 @@ def get_env(args: argparse.Namespace) -> EnvType:
         env["epub_split_at_header"] = args.epub_split_at_header
 
     if args.format == "pdf":
-        env["keep_tex"] = args.keep_tex
+        env["pdf_keep_tex"] = args.pdf_keep_tex
 
     if args.format == "md":
         if args.md_word_wrap is None:
