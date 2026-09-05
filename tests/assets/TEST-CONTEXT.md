@@ -40,8 +40,11 @@ Questa è una nota inline^[testo *nota* inline] a piè di pagina e questa è una
  Format only the `math` in this sentence as inline code:
 
  ```When x = 3, that means x + 2 = 5```
-
-
+ 
+ This is a sup^1^ like l^2^ and this is a sub~2~ like H~2~O
+ 
+ The following is a table
+ 
  | Header 1 | Header 2 | Header 3 |
  | -------- | -------- | -------- |
  | a        | b        | c        |

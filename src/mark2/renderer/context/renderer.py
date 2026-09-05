@@ -122,6 +122,30 @@ class ConTeXtRenderer(BaseRenderer):
         """Render closing strong/bold token."""
         self.result.append("}")
 
+    def sup_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening superscript token."""
+        self.result.append("\\high{")
+
+    def sup_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing superscript token."""
+        self.result.append("}")
+
+    def sub_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening subscript token."""
+        self.result.append("\\low{")
+
+    def sub_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing subscript token."""
+        self.result.append("}")
+
     def heading_open(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:

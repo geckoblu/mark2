@@ -1,6 +1,9 @@
 # pylint: skip-file
 
-"""Minimal ConTeXt renderer compatible with markdown-it."""
+"""Deprecated ConTeXt renderer retained only as a reference.
+
+Use :mod:`mark2.renderer.context.renderer` for the active implementation.
+"""
 
 from typing import Any, Sequence
 
@@ -13,7 +16,7 @@ from mark2.plugins.yaml_parser import parse_simple_yaml
 
 
 class ConTeXtRenderer(BaseRenderer):
-    """A minimal ConTeXt renderer for markdown-it tokens."""
+    """Deprecated reference implementation; do not use in production."""
 
     __output__: str = "text"
     result: list[str]
