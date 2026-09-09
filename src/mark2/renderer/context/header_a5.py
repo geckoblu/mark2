@@ -29,7 +29,7 @@ CONTEXT_HEADER_A5 = r"""% !TeX program = context
 % Typography (main font, OpenType features, utility sizes)
 % -----------------------------------------------------------------------------
 \setupbodyfont[liberation,12pt]
-\definefontfeature[novel-feat][default][lnum=yes,pnum=yes,liga=yes]
+\definefontfeature[novel-feat][default][lnum=yes,pnum=yes,liga=yes,expansion=quality]
 \setupbodyfontenvironment[default][features=novel-feat]
 
 \definebodyfontswitch[smallx][9pt]
@@ -55,6 +55,7 @@ CONTEXT_HEADER_A5 = r"""% !TeX program = context
 \setupindenting[yes, small]
 %\hyphenpenalty=5000 % stronger anti-hyphenation (kept disabled)
 \pretolerance=2000
+\setuptolerance[horizontal,verytolerant,stretch]
 
 % -----------------------------------------------------------------------------
 % Footnotes and outer-margin references
