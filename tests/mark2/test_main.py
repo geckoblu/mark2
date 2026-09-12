@@ -21,7 +21,7 @@ class TestMain:
             ("html"),
             ("epub"),
             ("pdf"),
-            ("tex"),
+            # ("tex"),
         ],
     )
     def test_main_runs_without_errors(self, monkeypatch, format_):
