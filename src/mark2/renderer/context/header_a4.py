@@ -46,7 +46,7 @@ CONTEXT_HEADER_A4 = r"""% !TeX program = context
 % -----------------------------------------------------------------------------
 % Navigation (PDF interaction and bookmarks)
 % -----------------------------------------------------------------------------
-\setupinteraction[state=start]
+\setupinteraction[state=start,color=blue]
 \placebookmarks[part,chapter,section,subsection,booktitle,subsubsection][part]
 
 % -----------------------------------------------------------------------------

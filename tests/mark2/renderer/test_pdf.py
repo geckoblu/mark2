@@ -11,6 +11,7 @@ from unittest import mock
 
 import pytest
 from markdown_it import MarkdownIt
+from markdown_it.token import Token
 
 from mark2.renderer.pdf import PDFRenderer
 from mark2.renderer.context.renderer import ConTeXtRenderer
@@ -18,6 +19,30 @@ from mark2.renderer.context.renderer import ConTeXtRenderer
 
 class TestPDFRenderer:
     """Test suite for PDFRenderer."""
+
+    def test_context_internal_links_create_references(self):
+        """Fragment links target ConTeXt references instead of opening files."""
+        renderer = ConTeXtRenderer()
+        heading = Token("heading_open", "h2", 1)
+        heading.attrSet("id", "target")
+        internal_link = Token("link_open", "a", 1)
+        internal_link.attrSet("href", "#target")
+        external_link = Token("link_open", "a", 1)
+        external_link.attrSet("href", "https://example.com")
+
+        renderer.heading_open([heading], 0, {}, {})
+        renderer.link_open([internal_link], 0, {}, {})
+        renderer.link_close([], 0, {}, {})
+        renderer.link_open([external_link], 0, {}, {})
+        renderer.link_close([], 0, {}, {})
+
+        assert renderer.result == [
+            "\\subsection[target]{",
+            "\\goto{",
+            "}[target]",
+            "\\goto{",
+            "}[url(https://example.com)]",
+        ]
 
     def test_output_attribute(self):
         """Test that PDFRenderer has correct output format."""

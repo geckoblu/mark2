@@ -9,6 +9,7 @@ from mark2.renderer.util import open_output
 from mark2.renderer.baserenderer import BaseRenderer
 from mark2.renderer.context.header_a5 import CONTEXT_HEADER_A5
 from mark2.renderer.context.header_a4 import CONTEXT_HEADER_A4
+from mark2.plugins.headingsid_plugin import slugify
 
 
 class ConTeXtRenderer(BaseRenderer):
@@ -162,7 +163,22 @@ class ConTeXtRenderer(BaseRenderer):
             5: "\\subsubsubsubsection{",
             6: "\\subsubsubsubsubsection{",
         }
-        self.result.append(heading_map.get(level, "\\section{"))
+        heading_id = token.attrGet("id")
+        target_id = heading_id
+        if idx + 1 < len(tokens) and tokens[idx + 1].type == "inline":
+            inline_token = tokens[idx + 1]
+            title = "".join(
+                child.content
+                for child in inline_token.children or []
+                if child.type in ("text", "code_inline")
+            )
+            title_id = slugify(title)
+            if not target_id or target_id.startswith("toc_id_"):
+                target_id = title_id
+        heading_command = heading_map.get(level, "\\section{")
+        if target_id:
+            heading_command = heading_command.replace("{", f"[{target_id}]{{", 1)
+        self.result.append(heading_command)
 
     def heading_close(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
@@ -221,7 +237,10 @@ class ConTeXtRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render closing link token."""
-        self.result.append(f"}}[url({self.link_href})]")
+        if self.link_href.startswith("#"):
+            self.result.append(f"}}[{self.link_href[1:]}]")
+        else:
+            self.result.append(f"}}[url({self.link_href})]")
         self.in_link = False
 
     def blockquote_open(
