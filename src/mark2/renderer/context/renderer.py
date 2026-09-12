@@ -270,6 +270,27 @@ class ConTeXtRenderer(BaseRenderer):
         self.result.append(token.content)
         self.result.append("\\stoptyping\n\n")
 
+    def fence(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render fenced code block token (```lang ... ```).
+
+        Rendered as a plain ``\\starttyping`` block, identically to ``code_block``,
+        without syntax highlighting.
+
+        Choice/limitation: ``token.info`` holds the language string after the
+        opening fence (e.g. "python"), but it is intentionally ignored here.
+        ConTeXt's core ``\\starttyping[option=...]`` only supports a small set of
+        built-in lexers (e.g. TEX, XML, PERL, SQL) with no generic mapping for
+        arbitrary Markdown language tags, and full multi-language highlighting
+        would require the external ``t-vim`` module (extra dependency, requires
+        Vim on the compilation host). Since ``token.info`` is free-form text
+        supplied by the document author, it is also not validated/escaped here;
+        it is discarded rather than interpolated into the output.
+        """
+        token = tokens[idx]
+        self.result.append("\\starttyping\n")
+        self.result.append(token.content)
+        self.result.append("\\stoptyping\n\n")
+
     ###########################################################################
     # Footnote methods
     ###########################################################################
