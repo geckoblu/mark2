@@ -28,7 +28,7 @@ CONTEXT_HEADER_A4 = r"""% !TeX program = context
 % -----------------------------------------------------------------------------
 % Typography (main font, OpenType features, utility sizes)
 % -----------------------------------------------------------------------------
-\setupbodyfont[libertinus,14.4pt]
+\setupbodyfont[libertinus,12pt]
 \definefontfeature[novel-feat][default][lnum=yes,pnum=yes,liga=yes,expansion=quality]
 \setupbodyfontenvironment[default][features=novel-feat]
 

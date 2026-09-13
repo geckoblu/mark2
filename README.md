@@ -288,7 +288,8 @@ Content below
 - Minimum 3 plus signs: `+++`
 - Can use more plus signs: `++++++++`
 - Rendered as `<hr class="myst-block">`
-- Useful for section breaks in longer documents
+- Useful for visual or semantic section breaks in longer documents
+- Unlike `---`, does not create a page break in PDF or EPUB output
 
 **Example:**
 ```markdown
@@ -324,8 +325,9 @@ Reference the label elsewhere: {ref}`my-label`
 **Features:**
 - Labels must be on their own line
 - Typically placed before headings
-- Can be referenced using role syntax
-- Useful for internal document linking
+- The default renderer outputs a labeled anchor element
+- `{ref}` is rendered as a styled inline role; it does not automatically resolve the label to a link
+- Use a normal Markdown link, such as `[Introduction](#introduction)`, for an explicit internal link
 
 **Complete Example:**
 ```markdown
@@ -337,12 +339,12 @@ This is the introduction section.
 (methodology)=
 ## Research Methodology
 
-As discussed in the {ref}`introduction`, our approach...
+As discussed in the [Introduction](#introduction), our approach...
 
 (results)=
 ## Results
 
-The results are analyzed in detail. See {ref}`methodology` for context.
+The results are analyzed in detail. See [Research Methodology](#methodology) for context.
 ```
 
 ### 5. Container Blocks
@@ -508,38 +510,40 @@ Automatically generates or allows custom IDs for headings.
 ```markdown
 # My Section Title
 ```
-Generates: `<h1 id="my-section-title">My Section Title</h1>`
+By default, Mark2 generates sequential IDs such as `<h1 id="toc_id_1">My Section Title</h1>`.
 
 **Custom IDs (using targets):**
 ```markdown
 (custom-id)=
 # My Section Title
 ```
-Generates: `<h1 id="custom-id">My Section Title</h1>`
+This creates a separate target before the heading:
+`<div class="myst-target"><a href="#custom-id">(custom-id)=</a></div>`.
+It does not replace the heading's generated ID.
 
 **Features:**
-- Automatic slug generation from heading text
-- Support for custom IDs via target syntax
+- Sequential automatic IDs for headings
+- Separate named targets using `(name)=` syntax
 - Enables internal linking and table of contents generation
 
 **Complete Example:**
 ```markdown
 # Introduction to Machine Learning
-% Auto-generated ID: #introduction-to-machine-learning
+% Auto-generated ID: #toc_id_1
 
 (custom-section)=
 ## What is Machine Learning?
-% Custom ID: #custom-section
+% Separate target: #custom-section; the heading keeps its generated ID
 
 ### Supervised Learning
-% Auto-generated ID: #supervised-learning
+% Auto-generated ID: #toc_id_3
 
 (neural-nets)=
 ### Neural Networks
-% Custom ID: #neural-nets
+% Separate target: #neural-nets; the heading keeps its generated ID
 
 You can link to sections:
-- [Introduction](#introduction-to-machine-learning)
+- [Introduction](#toc_id_1)
 - [Machine Learning](#custom-section)
 - [Neural Networks](#neural-nets)
 ```

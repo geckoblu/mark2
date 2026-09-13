@@ -255,6 +255,40 @@ class ConTeXtRenderer(BaseRenderer):
         """Render closing blockquote token."""
         self.result.append("\\stopBlockquote\n\n")
 
+    def hr(self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType) -> None:
+        """Render a standard Markdown thematic break."""
+        self.result.append("\\thinrule\n\n")
+
+    def myst_block_break(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render a MyST block break."""
+        self.result.append("\\thinrule\n\n")
+
+    def myst_line_comment(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render a MyST line comment as a ConTeXt comment."""
+        content = tokens[idx].content.replace("\n", "\n% ")
+        self.result.append(f"% {content}\n")
+
+    def myst_target(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render a MyST target as a ConTeXt reference."""
+        label = self._escape_tex(tokens[idx].content)
+        self.result.append(f"\\reference[{label}]{{}}\n")
+
+    def myst_role(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render a MyST role's content in ConTeXt."""
+        token = tokens[idx]
+        if token.children:
+            self.result.append(self._render_inline_tokens(token.children))
+        else:
+            self.result.append(self._escape_tex(token.content))
+
     def pagebreak(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:

@@ -38,6 +38,12 @@ class RendererHTML(markdown_it.renderer.RendererHTML):
 
         return ""  # Front matter is not rendered in output
 
+    def myst_block_break(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> str:
+        """Render a MyST block break using the standard HTML token renderer."""
+        return self.renderToken(tokens, idx, options, env)
+
     ###########################################################################
     # footnote_plugin renderers
     ###########################################################################

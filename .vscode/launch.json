@@ -155,5 +155,20 @@
                 "-v"
             ]
         },
+        {
+            "name": "test_myst_comments",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "console": "internalConsole",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src:${workspaceFolder}/tests"
+            },
+            "args": [
+                "tests/mark2/plugins/test_myst_comments.py",
+                "-v"
+            ]
+        },
     ]
 }
