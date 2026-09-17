@@ -84,6 +84,15 @@ EPUB options:
                         stylesheet for epub
   --epub-split-at-header {h1,h2,h3,h4,h5,h6}
                         header level at which to split content into separate pages [default: h2]
+
+PDF options:
+  --pdf-keep-tex        keep intermediate .tex file generated during PDF output
+  --pdf-page-format {A4,A5}
+                        page format for PDF output (choices: A4, A5) [default: A4]
+  --pdf-font-size PDF_FONT_SIZE
+                        main body font size for PDF output, e.g. '12pt' [default: format-dependent]
+  --pdf-font-name PDF_FONT_NAME
+                        main body font name for PDF output, e.g. 'libertinus' [default: format-dependent]
 ```
 
 ### Examples
@@ -97,6 +106,9 @@ EPUB options:
 
 # Convert to PDF
 ./mark2.sh report.md -f pdf
+
+# Convert to PDF with a custom page format, font, and font size
+./mark2.sh report.md -f pdf --pdf-page-format A5 --pdf-font-name libertinus --pdf-font-size 11pt
 
 # Generate ConTeXt source
 ./mark2.sh article.md -f tex -o article.tex
@@ -151,6 +163,26 @@ summary: >
 - Enclosed by `---` markers
 - Supports standard YAML syntax including multi-line values
 - Metadata can be used by renderers (especially EPUB and PDF)
+
+**PDF-specific keys:**
+
+The ConTeXt/PDF renderer also reads the following optional keys, which override the
+page-format defaults (A4/A5) but are overridden by the matching `--pdf-*` CLI option
+(priority: CLI > front matter > format default):
+
+```markdown
+---
+pdf-font-size: 11pt
+pdf-font-name: libertinus
+pdf-header-at-recto: h2,h3
+---
+```
+
+- `pdf-font-size` / `pdf-font-name`: main body font size/name
+- `pdf-header-at-recto`: comma-separated heading levels (`h1`, `h2`, `h3`, `h4`) that must
+  always start on a right-hand (recto) page
+- Each key also accepts a page-format-specific variant that takes precedence over the
+  generic one, e.g. `pdf-a4-font-size`, `pdf-a5-font-name`, `pdf-a4-header-at-recto`
 
 
 ### 2. Footnotes

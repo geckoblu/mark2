@@ -9,6 +9,13 @@ implementation.
 
 from mark2.renderer.context.config import ContextConfig
 
+HEADER_LEVEL_TO_CONTEXT_HEAD = {
+    "h1": "section",
+    "h2": "subsection",
+    "h3": "subsubsection",
+    "h4": "subsubsubsection",
+}
+
 
 def _preamble_section() -> str:
     return "% !TeX program = context\n% ConTeXt Mk XL (LuaMetaTeX)\n"
@@ -135,14 +142,12 @@ def _list_section() -> str:
 """
 
 
-def _subsubsection_page_section(cfg: ContextConfig) -> str:
-    """Force subsubsections to start on a right-hand page (project-specific)."""
-    if not cfg.subsubsection_start_right_page:
+def _header_at_recto_section(cfg: ContextConfig) -> str:
+    """Force the configured heading levels to start on a recto (right-hand) page."""
+    if not cfg.header_at_recto:
         return ""
-    return """\\setuphead
-  [subsubsection]
-  [page=right]
-"""
+    heads = ",".join(HEADER_LEVEL_TO_CONTEXT_HEAD[level] for level in cfg.header_at_recto)
+    return f"\\setuphead[{heads}][page=right]\n"
 
 
 def build_header(cfg: ContextConfig) -> str:
@@ -159,12 +164,12 @@ def build_header(cfg: ContextConfig) -> str:
         _language_and_geometry_section(cfg),
         _typography_section(cfg),
         _colors_and_heads_section(),
+        _header_at_recto_section(cfg),
         _navigation_section(),
         _paragraph_flow_section(cfg),
         _footnotes_section(cfg),
         _blockquote_section(),
         _list_section(),
-        _subsubsection_page_section(cfg),
         "\\starttext\n\n",
     ]
     return "\n".join(section for section in sections if section)

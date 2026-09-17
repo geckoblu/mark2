@@ -27,6 +27,8 @@ class ConTeXtRenderer(BaseRenderer):
 
         self.result = []
         self.in_list_item = False
+        self.link_href = ""
+        self.in_link = False
 
     def render(self, tokens: Sequence[Token], options: OptionsDict, env: EnvType) -> None:
         """Takes token stream and generates ConTeXt output.
@@ -38,10 +40,9 @@ class ConTeXtRenderer(BaseRenderer):
         """
 
         self.result = []
-        filtered = self._populate_reference_footnotes(tokens, env)
 
-        page_format = env.get("pdf_page_format", "A4")
-        cfg = ContextConfig.a5() if page_format == "A5" else ContextConfig.a4()
+        filtered = self._populate_reference_footnotes(tokens, env)
+        cfg = ContextConfig.get(env, filtered)
         self.result.append(build_header(cfg))
 
         super().render(filtered, options, env)

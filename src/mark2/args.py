@@ -101,6 +101,16 @@ def configure_parser() -> argparse.ArgumentParser:
         default="A4",
         help="page format for PDF output (choices: %(choices)s) [default: %(default)s]",
     )
+    pdf_group.add_argument(
+        "--pdf-font-size",
+        default=None,
+        help="main body font size for PDF output, e.g. '12pt' [default: format-dependent]",
+    )
+    pdf_group.add_argument(
+        "--pdf-font-name",
+        default=None,
+        help="main body font name for PDF output, e.g. 'libertinus' [default: format-dependent]",
+    )
 
     # MARKDOWN options ---------------------------
     # markdown_group = parser.add_argument_group("MARKDOWN options")
@@ -158,6 +168,10 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--pdf-keep-tex is only valid with --format pdf")
     if fmt != "pdf" and args.pdf_page_format != "A4":
         parser.error("--pdf-page-format is only valid with --format pdf")
+    if fmt != "pdf" and args.pdf_font_size is not None:
+        parser.error("--pdf-font-size is only valid with --format pdf")
+    if fmt != "pdf" and args.pdf_font_name is not None:
+        parser.error("--pdf-font-name is only valid with --format pdf")
 
     # if fmt != "md" and args.md_word_wrap:
     #     parser.error("--md-word-wrap is only valid with --format md")
@@ -242,6 +256,8 @@ def get_env(args: argparse.Namespace) -> EnvType:
     if args.format == "pdf":
         env["pdf_keep_tex"] = args.pdf_keep_tex
         env["pdf_page_format"] = args.pdf_page_format
+        env["pdf_font_size"] = args.pdf_font_size
+        env["pdf_font_name"] = args.pdf_font_name
 
     if args.format == "md":
         if args.md_word_wrap is None:

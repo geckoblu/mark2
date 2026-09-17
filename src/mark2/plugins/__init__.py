@@ -16,7 +16,6 @@ __all__ = [
     "container_plugin",
     # "footnote_tail",
     "headingsid_plugin",
-    "myst_block_plugin",
     "myst_role_plugin",
     "pagebreak_plugin",
     "sup_plugin",

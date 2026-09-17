@@ -7,11 +7,10 @@ from mdit_py_plugins.attrs import attrs_block_plugin
 from mdit_py_plugins.footnote import footnote_plugin
 from mdit_py_plugins.front_matter import front_matter_plugin
 from mdit_py_plugins.subscript import sub_plugin
-from mdit_py_plugins.subscript import sub_plugin
 
 # TODO: Use the mdit_py_plugins.superscript sup_plugin instead of the mark2 one
 #       as soon as possible.
-# from mdit_py_plugins.superscript import sup_plugin
+#       from mdit_py_plugins.superscript import sup_plugin
 from mdit_py_plugins.myst_blocks import myst_block_plugin
 
 from markdown_it import MarkdownIt
@@ -75,6 +74,7 @@ def set_plugins(md: MarkdownIt, output_format: str | None = None) -> None:
         md.add_render_rule("myst_block_break", md.renderer.myst_block_break)
     md.use(pagebreak_plugin)
 
+    # pylint: disable-next=superfluous-parens
     set_footnote_plugin(md, move_to_end=(output_format != "pdf"))
 
 
