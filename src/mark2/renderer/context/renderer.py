@@ -7,8 +7,8 @@ from markdown_it.utils import EnvType, OptionsDict
 
 from mark2.renderer.util import open_output
 from mark2.renderer.baserenderer import BaseRenderer
-from mark2.renderer.context.header_a5 import CONTEXT_HEADER_A5
-from mark2.renderer.context.header_a4 import CONTEXT_HEADER_A4
+from mark2.renderer.context.config import ContextConfig
+from mark2.renderer.context.header import build_header
 from mark2.plugins.headingsid_plugin import slugify
 
 
@@ -41,8 +41,8 @@ class ConTeXtRenderer(BaseRenderer):
         filtered = self._populate_reference_footnotes(tokens, env)
 
         page_format = env.get("pdf_page_format", "A4")
-        header = CONTEXT_HEADER_A5 if page_format == "A5" else CONTEXT_HEADER_A4
-        self.result.append(header)
+        cfg = ContextConfig.a5() if page_format == "A5" else ContextConfig.a4()
+        self.result.append(build_header(cfg))
 
         super().render(filtered, options, env)
 
