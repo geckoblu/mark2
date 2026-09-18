@@ -1,7 +1,10 @@
 """Configuration values used to build the ConTeXt document header."""
 
-from dataclasses import dataclass, field
-from typing import Sequence
+import re
+from dataclasses import dataclass, field, fields
+from decimal import Decimal
+from typing import Sequence, get_args, get_origin, get_type_hints
+from types import UnionType
 
 from markdown_it.token import Token
 from markdown_it.utils import EnvType
@@ -23,14 +26,28 @@ class ContextConfig:
     pagenumbering_alternative: str = "doublesided"
 
     # Page geometry (\setuplayout)
-    topspace: str = "15mm"
-    bottomspace: str = "15mm"
+    topspace: str = "10mm"
     header: str = "5mm"
-    footer: str = "5mm"
     headerdistance: str = "5mm"
-    backspace: str = "25mm"
-    rightedge: str = "1mm"
-    rightmargin: str = "29mm"
+    bottomspace: str = "10mm"
+    footer: str = "5mm"
+    footerdistance: str = "5mm"
+
+    # Internal value: it is added to backspace by get() for doublesided layouts.
+    # Will be calculated as 5mm for doublesided layout
+    gutter: str = "0mm"
+
+    backspace: str = "20mm"
+    leftmargindistance: str = "5mm"
+    leftmargin: str = "15mm"
+    leftedgedistance: str = "0mm"
+    leftedge: str = "0mm"
+
+    rightmargindistance: str = "5mm"
+    rightmargin: str = "15mm"
+    rightedgedistance: str = "0mm"
+    rightedge: str = "0mm"
+    cutspace: str = "20mm"  # rightmargindistance + rightmargin + rightedgedistance + rightedge
 
     # Typography (\setupbodyfont)
     font_name: str = "libertinus"
@@ -47,26 +64,12 @@ class ContextConfig:
 
     # Heading levels (e.g. ["h2", "h3"]) that must start on a recto (right-hand) page.
     # Front-matter only for now (`pdf-header-at-recto: h2,h3`);
-    # not yet consumed by the header builder.
     header_at_recto: list[str] = field(default_factory=list)
 
     @classmethod
     def a4(cls) -> "ContextConfig":
         """Return the configuration matching the current A4 header."""
-        return cls(
-            page_format="A4",
-            pagenumbering_alternative="doublesided",
-            topspace="15mm",
-            bottomspace="15mm",
-            backspace="25mm",
-            rightmargin="29mm",
-            font_name="libertinus",
-            indenting="medium",
-            footnote_columns=2,
-            footnote_bodyfont="11pt",
-            footnote_distance="-1mm",
-            define_verse_helpers=True,
-        )
+        return cls()
 
     @classmethod
     def a5(cls) -> "ContextConfig":
@@ -98,40 +101,137 @@ class ContextConfig:
             An instance of ContextConfig with values overridden by front matter and environment
             variables if available.
         """
-        page_format = env.get("pdf_page_format", "A4")
-        pfl = page_format.lower()
-        cfg = ContextConfig.a5() if page_format == "A5" else ContextConfig.a4()
-
         # Parse Front Matter
         front_matter_token = next((tok for tok in filtered if tok.type == "front_matter"), None)
         front_matter = parse_simple_yaml(front_matter_token.content) if front_matter_token else {}
 
+        page_format = _normalize_page_format(
+            env.get("pdf_page_format", front_matter.get("pdf-page-format", "A4"))
+        )
+        pfl = page_format.lower()
+        cfg = ContextConfig.a5() if page_format == "A5" else ContextConfig.a4()
+        cfg.page_format = page_format
+
         # Override with Front Matter and environment variables if available
-        if front_matter.get("pdf-font-size"):
-            cfg.font_size = str(front_matter["pdf-font-size"])
-        if front_matter.get(f"pdf-{pfl}-font-size"):
-            cfg.font_size = str(front_matter[f"pdf-{pfl}-font-size"])
-        if env.get("pdf_font_size"):
-            cfg.font_size = env["pdf_font_size"]
+        for config_field in fields(cfg):
+            attribute = config_field.name
+            if attribute == "page_format":
+                continue
+            key = attribute.replace("_", "-")
+            value = _front_matter_value(front_matter, key, pfl)
+            if value is not None:
+                setattr(cfg, attribute, _convert_value(attribute, value, cfg))
+            env_key = f"pdf_{attribute}"
+            value = env.get(env_key)
+            if value is not None:
+                setattr(cfg, attribute, _convert_value(attribute, value, cfg))
 
-        if front_matter.get("pdf-font-name"):
-            cfg.font_name = str(front_matter["pdf-font-name"])
-        if front_matter.get(f"pdf-{pfl}-font-name"):
-            cfg.font_name = str(front_matter[f"pdf-{pfl}-font-name"])
-        if env.get("pdf_font_name"):
-            cfg.font_name = env["pdf_font_name"]
+        # pdf-cutspace
+        cfg.cutspace = _sum_measurements(
+            cfg.rightmargindistance,
+            cfg.rightmargin,
+            cfg.rightedgedistance,
+            cfg.rightedge,
+        )
+        value = _front_matter_value(front_matter, "cutspace", pfl)
+        if value is not None:
+            cfg.cutspace = str(value)
+        if env.get("pdf_cutspace"):
+            cfg.cutspace = env["pdf_cutspace"]
 
-        if front_matter.get("pdf-header-at-recto"):
-            cfg.header_at_recto = _parse_header_at_recto(str(front_matter["pdf-header-at-recto"]))
-        if front_matter.get(f"pdf-{pfl}-header-at-recto"):
-            cfg.header_at_recto = _parse_header_at_recto(
-                str(front_matter[f"pdf-{pfl}-header-at-recto"])
-            )
+        # pdf-gutter
+        if cfg.pagenumbering_alternative == "doublesided":
+            cfg.gutter = "5mm"
+        value = _front_matter_value(front_matter, "gutter", pfl)
+        if value is not None:
+            cfg.gutter = str(value)
+        if env.get("pdf_gutter"):
+            cfg.gutter = env["pdf_gutter"]
+
+        # pdf-backspace
+        cfg.backspace = _sum_measurements(
+            cfg.leftmargindistance,
+            cfg.leftmargin,
+            cfg.leftedgedistance,
+            cfg.leftedge,
+        )
+        value = _front_matter_value(front_matter, "backspace", pfl)
+        if value is not None:
+            cfg.backspace = str(value)
+        if env.get("pdf_backspace"):
+            cfg.backspace = env["pdf_backspace"]
+        cfg.backspace = _sum_measurements(cfg.backspace, cfg.gutter)
 
         return cfg
 
 
+def _front_matter_value(front_matter: dict, attribute: str, page_format: str):
+    """Return a generic front-matter value, overridden by its page-specific value."""
+    value = front_matter.get(f"pdf-{attribute}")
+    page_specific_value = front_matter.get(f"pdf-{page_format}-{attribute}")
+    return page_specific_value if page_specific_value is not None else value
+
+
+VALID_PAGE_FORMATS = ("A4", "A5")
+
+
+def _normalize_page_format(value: object) -> str:
+    """Normalize and validate a configured page format."""
+    page_format = str(value).strip().upper()
+    if page_format not in VALID_PAGE_FORMATS:
+        raise ValueError(f"Unsupported page format {value!r}; expected one of {VALID_PAGE_FORMATS}")
+    return page_format
+
+
+def _convert_value(attribute: str, value: object, cfg: ContextConfig):
+    """Convert a front-matter value to the appropriate type based on the annotation in ContextConfig."""  # pylint: disable=line-too-long
+    annotation = get_type_hints(type(cfg))[attribute]
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    if annotation is bool:
+        return _parse_bool(value)
+
+    if annotation is str:
+        return str(value)
+
+    if origin is list and args == (str,):
+        return _parse_header_at_recto(str(value))
+
+    if origin in (UnionType,):
+        non_none_types = [arg for arg in args if arg is not type(None)]
+
+        if non_none_types == [int]:
+            return _parse_optional_int(value)
+
+        if non_none_types == [str]:
+            return _parse_optional_str(value)
+
+    return value
+
+
+def _parse_bool(value: object) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"Expected a boolean front-matter value, got {value!r}")
+    return value
+
+
+def _parse_optional_int(value: object) -> int | None:
+    if value is None or (isinstance(value, str) and value.lower() == "none"):
+        return None
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"Expected an integer or none, got {value!r}")
+    return value
+
+
+def _parse_optional_str(value: object) -> str | None:
+    if value is None or (isinstance(value, str) and value.lower() == "none"):
+        return None
+    return str(value)
+
+
 VALID_HEADER_AT_RECTO_LEVELS = ("h1", "h2", "h3", "h4")
+MEASUREMENT_RE = re.compile(r"^([+-]?(?:\d+(?:\.\d*)?|\.\d+))([a-zA-Z]+)$")
 
 
 def _parse_header_at_recto(raw: str) -> list[str]:
@@ -154,3 +254,17 @@ def _parse_header_at_recto(raw: str) -> list[str]:
             f"expected one of {VALID_HEADER_AT_RECTO_LEVELS}"
         )
     return levels
+
+
+def _sum_measurements(*measurements: str) -> str:
+    """Return the sum of measurements, preserving their common unit."""
+    parsed = [MEASUREMENT_RE.fullmatch(measurement.strip()) for measurement in measurements]
+    if any(match is None for match in parsed):
+        raise ValueError(f"Invalid measurement: {measurements}")
+
+    units = {match.group(2) for match in parsed if match is not None}
+    if len(units) != 1:
+        raise ValueError(f"Measurements must use the same unit: {measurements}")
+
+    total = sum((Decimal(match.group(1)) for match in parsed if match is not None), Decimal(0))
+    return f"{total:g}{units.pop()}"
