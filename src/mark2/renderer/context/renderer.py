@@ -130,7 +130,7 @@ class ConTeXtRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render opening superscript token."""
-        self.result.append("\\high{")
+        self.result.append("\\Sup{")
 
     def sup_close(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType

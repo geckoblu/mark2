@@ -17,6 +17,32 @@ HEADER_LEVEL_TO_CONTEXT_HEAD = {
 }
 
 
+def build_header(cfg: ContextConfig) -> str:
+    """Build the full ConTeXt preamble text for the given configuration.
+
+    Args:
+        cfg: Header configuration, e.g. ``ContextConfig.a4()`` or ``ContextConfig.a5()``
+
+    Returns:
+        The ConTeXt preamble, ending with ``\\starttext``
+    """
+    sections = [
+        _preamble_section(),
+        _language_and_geometry_section(cfg),
+        _typography_section(cfg),
+        _colors_and_heads_section(),
+        _header_at_recto_section(cfg),
+        _navigation_section(),
+        _paragraph_flow_section(cfg),
+        _footnotes_section(cfg),
+        _blockquote_section(),
+        _list_section(),
+        _other_sections(),
+        "\\starttext\n\n",
+    ]
+    return "\n".join(section for section in sections if section)
+
+
 def _preamble_section() -> str:
     return "% !TeX program = context\n% ConTeXt Mk XL (LuaMetaTeX)\n"
 
@@ -158,26 +184,25 @@ def _header_at_recto_section(cfg: ContextConfig) -> str:
     return f"\\setuphead[{heads}][page=right]\n"
 
 
-def build_header(cfg: ContextConfig) -> str:
-    """Build the full ConTeXt preamble text for the given configuration.
+def _other_sections() -> str:
+    """Other miscellaneous sections."""
+    return """
+% Superscript formatting
+\\define[1]\\Sup{%
+    \\dontleavehmode
+    \\hbox{\\raise0.9ex\\hbox{{\\smallxx\\strut #1}}}%
+}
 
-    Args:
-        cfg: Header configuration, e.g. ``ContextConfig.a4()`` or ``ContextConfig.a5()``
+% -----------------------------------------------------------------------------
+% Project-specific section
+% -----------------------------------------------------------------------------
 
-    Returns:
-        The ConTeXt preamble, ending with ``\\starttext``
-    """
-    sections = [
-        _preamble_section(),
-        _language_and_geometry_section(cfg),
-        _typography_section(cfg),
-        _colors_and_heads_section(),
-        _header_at_recto_section(cfg),
-        _navigation_section(),
-        _paragraph_flow_section(cfg),
-        _footnotes_section(cfg),
-        _blockquote_section(),
-        _list_section(),
-        "\\starttext\n\n",
-    ]
-    return "\n".join(section for section in sections if section)
+% For Bibleprj project: Verse number formatting
+\\define[1]\\versenumber{%
+    \\dontleavehmode
+    \\hbox{\\raise0.9ex\\hbox{{\\smallxx \\strut #1}}}%
+    \\kern .2em
+    \\nobreak
+    \\ignorespaces
+}
+"""
