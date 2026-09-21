@@ -193,6 +193,11 @@ def _other_sections() -> str:
     \\hbox{\\raise0.9ex\\hbox{{\\smallxx\\strut #1}}}%
 }
 
+% Subscript formatting
+\\define[1]\\Sub{%
+    \\dontleavehmode
+    \\hbox{\\lower0.3ex\\hbox{{\\smallxx\\strut #1}}}%
+
 % -----------------------------------------------------------------------------
 % Project-specific section
 % -----------------------------------------------------------------------------

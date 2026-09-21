@@ -142,7 +142,7 @@ class ConTeXtRenderer(BaseRenderer):
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
     ) -> None:
         """Render opening subscript token."""
-        self.result.append("\\low{")
+        self.result.append("\\Sub{")
 
     def sub_close(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
