@@ -197,6 +197,7 @@ def _other_sections() -> str:
 \\define[1]\\Sub{%
     \\dontleavehmode
     \\hbox{\\lower0.3ex\\hbox{{\\smallxx\\strut #1}}}%
+}
 
 % -----------------------------------------------------------------------------
 % Project-specific section
