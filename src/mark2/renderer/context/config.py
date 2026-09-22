@@ -1,8 +1,10 @@
 """Configuration values used to build the ConTeXt document header."""
 
 import re
+import sys
 from dataclasses import dataclass, field, fields
 from decimal import Decimal
+from pathlib import Path
 from typing import Sequence, get_args, get_origin, get_type_hints
 from types import UnionType
 
@@ -65,6 +67,9 @@ class ContextConfig:
     # Heading levels (e.g. ["h2", "h3"]) that must start on a recto (right-hand) page.
     # Front-matter only for now (`pdf-header-at-recto: h2,h3`);
     header_at_recto: list[str] = field(default_factory=list)
+
+    # Preamble
+    preamble: str | None = None
 
     @classmethod
     def a4(cls) -> "ContextConfig":
@@ -161,6 +166,32 @@ class ContextConfig:
         if env.get("pdf_backspace"):
             cfg.backspace = env["pdf_backspace"]
         cfg.backspace = _sum_measurements(cfg.backspace, cfg.gutter)
+
+        # pdf-preamble
+        if env.get("pdf_preamble"):
+            preamble_path = Path(env["pdf_preamble"]).resolve()
+            cfg.preamble = str(preamble_path)
+        else:
+            value = _front_matter_value(front_matter, "preamble", pfl)
+            if value is not None:
+                preamble_path = Path(value)
+                if not preamble_path.is_absolute():
+                    # Relative paths are resolved relative to the source directory.
+                    input_filename = env.get("input_filename", "-")
+                    source_directory = (
+                        Path(input_filename).resolve().parent
+                        if input_filename != "-"
+                        else Path.cwd()
+                    )
+                    preamble_path = source_directory / preamble_path
+                preamble_path = preamble_path.resolve()
+                if not preamble_path.is_file():
+                    print(
+                        f"Preamble file defined in front matter not found:\n\t{preamble_path}",
+                        file=sys.stderr,
+                    )
+                    # raise FileNotFoundError(f"Preamble file not found: {preamble_path}")
+                cfg.preamble = str(preamble_path)
 
         return cfg
 

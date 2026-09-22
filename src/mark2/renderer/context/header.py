@@ -17,11 +17,12 @@ HEADER_LEVEL_TO_CONTEXT_HEAD = {
 }
 
 
-def build_header(cfg: ContextConfig) -> str:
+def build_header(cfg: ContextConfig, additional_preamble: str = "") -> str:
     """Build the full ConTeXt preamble text for the given configuration.
 
     Args:
         cfg: Header configuration, e.g. ``ContextConfig.a4()`` or ``ContextConfig.a5()``
+        additional_preamble: Optional ConTeXt preamble to include before ``\\starttext``
 
     Returns:
         The ConTeXt preamble, ending with ``\\starttext``
@@ -38,6 +39,7 @@ def build_header(cfg: ContextConfig) -> str:
         _blockquote_section(),
         _list_section(),
         _other_sections(),
+        _additional_preamble(cfg.preamble),
         "\\starttext\n\n",
     ]
     return "\n".join(section for section in sections if section)
@@ -211,4 +213,23 @@ def _other_sections() -> str:
     \\nobreak
     \\ignorespaces
 }
+"""
+
+
+def _additional_preamble(preamble_file: str | None) -> str:
+    if preamble_file is None:
+        return ""
+    try:
+        with open(preamble_file, encoding="utf-8") as f:
+            additional_preamble = f.read()
+    except FileNotFoundError:
+        return ""
+    return f"""
+% -----------------------------------------------------------------------------
+% Additional preamble: {preamble_file}
+% -----------------------------------------------------------------------------
+{additional_preamble}
+% -----------------------------------------------------------------------------
+% End of additional preamble
+% -----------------------------------------------------------------------------
 """

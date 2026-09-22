@@ -111,6 +111,11 @@ def configure_parser() -> argparse.ArgumentParser:
         default=None,
         help="main body font name for PDF output, e.g. 'libertinus' [default: format-dependent]",
     )
+    pdf_group.add_argument(
+        "--pdf-preamble",
+        type=argparsext.FileType("r", extension=["tex"]),
+        help="additional ConTeXt preamble for PDF",
+    )
 
     # MARKDOWN options ---------------------------
     # markdown_group = parser.add_argument_group("MARKDOWN options")
@@ -172,6 +177,8 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--pdf-font-size is only valid with --format pdf")
     if fmt != "pdf" and args.pdf_font_name is not None:
         parser.error("--pdf-font-name is only valid with --format pdf")
+    if fmt != "pdf" and args.pdf_preamble:
+        parser.error("--pdf-preamble is only valid with --format pdf")
 
     # if fmt != "md" and args.md_word_wrap:
     #     parser.error("--md-word-wrap is only valid with --format md")
@@ -258,6 +265,7 @@ def get_env(args: argparse.Namespace) -> EnvType:
         env["pdf_page_format"] = args.pdf_page_format
         env["pdf_font_size"] = args.pdf_font_size
         env["pdf_font_name"] = args.pdf_font_name
+        env["pdf_preamble"] = args.pdf_preamble
 
     if args.format == "md":
         if args.md_word_wrap is None:

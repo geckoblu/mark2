@@ -25,3 +25,12 @@ class TestHeaderAtRecto:
         assert (
             "\\setuphead[section,subsection,subsubsection,subsubsubsection][page=right]\n" in header
         )
+
+    def test_ignores_missing_additional_preamble_file(self, tmp_path):
+        """A missing additional preamble file does not prevent header generation."""
+        cfg = ContextConfig.a4()
+        cfg.preamble = str(tmp_path / "missing.tex")
+
+        header = build_header(cfg)
+
+        assert "% Additional preamble" not in header

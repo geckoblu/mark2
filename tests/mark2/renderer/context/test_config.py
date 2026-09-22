@@ -222,6 +222,25 @@ class TestContextConfigGet:
 
         assert cfg.font_name == "pagella"
 
+    def test_resolves_relative_preamble_from_source_directory(self, tmp_path):
+        """A relative preamble path is resolved relative to the Markdown source."""
+        source_file = tmp_path / "docs" / "source.md"
+        tokens = _parse_tokens("---\npdf-preamble: preamble.tex\n---\n\n# Title\n")
+        source_file.parent.mkdir()
+        source_file.parent.joinpath("preamble.tex").touch()
+
+        cfg = ContextConfig.get({"input_filename": str(source_file)}, tokens)
+
+        assert cfg.preamble == str(source_file.parent / "preamble.tex")
+
+    # def test_reports_missing_preamble_file(self, tmp_path):
+    #     """A missing preamble file raises an error with its resolved path."""
+    #     source_file = tmp_path / "docs" / "source.md"
+    #     tokens = _parse_tokens("---\npdf-preamble: missing.tex\n---\n\n# Title\n")
+
+    #     with pytest.raises(FileNotFoundError, match="Preamble file not found"):
+    #         ContextConfig.get({"input_filename": str(source_file)}, tokens)
+
     def test_header_at_recto_defaults_to_empty_list(self):
         """`header_at_recto` defaults to an empty list without front matter."""
         tokens = _parse_tokens("# Title\n\ntext\n")
