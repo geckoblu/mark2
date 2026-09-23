@@ -80,6 +80,22 @@ class ConTeXtRenderer(BaseRenderer):
             text = text.replace(char, replacement)
         return text
 
+    def render_token(
+        self,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
+    ) -> None:
+        token = tokens[idx]
+
+        if token.type.startswith("container_") and token.type.endswith("_open"):
+            self.container_open(tokens, idx, options, env)
+        elif token.type.startswith("container_") and token.type.endswith("_close"):
+            self.container_close(tokens, idx, options, env)
+        else:
+            super().render_token(tokens, idx, options, env)
+
     ###########################################################################
     # All the methods not starting with "render" nor "_" are rules renderers
     ###########################################################################
@@ -540,6 +556,25 @@ class ConTeXtRenderer(BaseRenderer):
     ) -> None:
         """Render closing table data cell token."""
         self.result.append(" \\eTD\n")
+
+    ###########################################################################
+    # Container methods
+    ###########################################################################
+    def container_open(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render opening container token."""
+        name = tokens[idx].type.removeprefix("container_").removesuffix("_open")
+        context_name = name.capitalize()
+        self.result.append(f"\\start{context_name}\n")
+
+    def container_close(
+        self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType
+    ) -> None:
+        """Render closing container token."""
+        name = tokens[idx].type.removeprefix("container_").removesuffix("_close")
+        context_name = name.capitalize()
+        self.result.append(f"\\stop{context_name}\n\n")
 
 
 CONTEXT_FOOTER = """\\stoptext

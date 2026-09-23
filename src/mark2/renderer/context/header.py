@@ -17,12 +17,11 @@ HEADER_LEVEL_TO_CONTEXT_HEAD = {
 }
 
 
-def build_header(cfg: ContextConfig, additional_preamble: str = "") -> str:
+def build_header(cfg: ContextConfig) -> str:
     """Build the full ConTeXt preamble text for the given configuration.
 
     Args:
         cfg: Header configuration, e.g. ``ContextConfig.a4()`` or ``ContextConfig.a5()``
-        additional_preamble: Optional ConTeXt preamble to include before ``\\starttext``
 
     Returns:
         The ConTeXt preamble, ending with ``\\starttext``
