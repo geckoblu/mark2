@@ -17,7 +17,7 @@ HEADER_LEVEL_TO_CONTEXT_HEAD = {
 }
 
 
-def build_header(cfg: ContextConfig) -> str:
+def build_header(cfg: ContextConfig, title: str = "", author: str = "") -> str:
     """Build the full ConTeXt preamble text for the given configuration.
 
     Args:
@@ -28,6 +28,7 @@ def build_header(cfg: ContextConfig) -> str:
     """
     sections = [
         _preamble_section(),
+        _interaction_section(title, author),
         _language_and_geometry_section(cfg),
         _typography_section(cfg),
         _colors_and_heads_section(),
@@ -42,6 +43,35 @@ def build_header(cfg: ContextConfig) -> str:
         "\\starttext\n\n",
     ]
     return "\n".join(section for section in sections if section)
+
+
+def _interaction_section(title: str, author: str) -> str:
+    return f"""% -----------------------------------------------------------------------------
+% Document metadata
+% -----------------------------------------------------------------------------
+\\setupinteraction[
+    title={{{_escape_tex(title)}}},
+    author={{{_escape_tex(author)}}},
+]
+"""
+
+
+def _escape_tex(text: str) -> str:
+    replacements = {
+        "\\": "\\textbackslash{}",
+        "{": "\\{",
+        "}": "\\}",
+        "$": "\\$",
+        "&": "\\&",
+        "%": "\\%",
+        "#": "\\#",
+        "_": "\\letterunderscore{}",
+        "~": "\\lettertilde{}",
+        "^": "\\letterhat{}",
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+    return text
 
 
 def _preamble_section() -> str:

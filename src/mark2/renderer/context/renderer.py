@@ -9,6 +9,7 @@ from mark2.renderer.util import open_output
 from mark2.renderer.baserenderer import BaseRenderer
 from mark2.renderer.context.config import ContextConfig
 from mark2.renderer.context.header import build_header
+from mark2.renderer.metadata import get_document_metadata
 from mark2.plugins.headingsid_plugin import slugify
 
 
@@ -43,7 +44,8 @@ class ConTeXtRenderer(BaseRenderer):
 
         filtered = self._populate_reference_footnotes(tokens, env)
         cfg = ContextConfig.get(env, filtered)
-        self.result.append(build_header(cfg))
+        title, author = get_document_metadata(env)
+        self.result.append(build_header(cfg, title, author))
 
         super().render(filtered, options, env)
 

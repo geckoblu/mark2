@@ -109,6 +109,7 @@ class ContextConfig:
         # Parse Front Matter
         front_matter_token = next((tok for tok in filtered if tok.type == "front_matter"), None)
         front_matter = parse_simple_yaml(front_matter_token.content) if front_matter_token else {}
+        env["front_matter"] = front_matter
 
         page_format = _normalize_page_format(
             env.get("pdf_page_format", front_matter.get("pdf-page-format", "A4"))

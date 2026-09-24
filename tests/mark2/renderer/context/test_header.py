@@ -34,3 +34,11 @@ class TestHeaderAtRecto:
         header = build_header(cfg)
 
         assert "% Additional preamble" not in header
+
+    def test_includes_document_metadata_in_interaction_setup(self):
+        """Document title and author are added to the ConTeXt interaction metadata."""
+        header = build_header(ContextConfig.a4(), "My Book & Notes", "John Doe")
+
+        assert "\\setupinteraction[\n" in header
+        assert "    title={My Book \\& Notes},\n" in header
+        assert "    author={John Doe},\n" in header

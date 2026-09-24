@@ -14,6 +14,7 @@ from markdown_it.token import Token
 from markdown_it.utils import EnvType, OptionsDict
 
 from mark2.renderer.rendererhtml import RendererHTML
+from mark2.renderer.metadata import get_document_metadata
 from mark2.renderer.epub.generatecover import generate_cover as _generate_cover
 from mark2.renderer.epub.generatefrontpage import generate_frontpage as _generate_frontpage
 from mark2.renderer.epub.imagesize import get_image_size
@@ -505,9 +506,7 @@ class EPUBRenderer(RendererHTML):
             - A string with additional metadata XML entries
         """
         frontmatter = env.get("front_matter", {})
-
-        doctitle = frontmatter.get("title", Path(env.get("output_filename", "-")).stem)
-        author = ""
+        doctitle, author = get_document_metadata(env)
 
         metadata_entries = []
 
