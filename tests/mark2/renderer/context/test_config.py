@@ -233,6 +233,21 @@ class TestContextConfigGet:
 
         assert cfg.preamble == str(source_file.parent / "preamble.tex")
 
+    def test_resolves_relative_tex_files_from_source_directory(self, tmp_path):
+        """The before/after TeX paths use the Markdown source directory as base."""
+        source_file = tmp_path / "docs" / "source.md"
+        tokens = _parse_tokens(
+            "---\npdf-tex-before: before.tex\npdf-tex-after: after.tex\n---\n\n# Title\n"
+        )
+        source_file.parent.mkdir()
+        source_file.parent.joinpath("before.tex").touch()
+        source_file.parent.joinpath("after.tex").touch()
+
+        cfg = ContextConfig.get({"input_filename": str(source_file)}, tokens)
+
+        assert cfg.tex_before == str(source_file.parent / "before.tex")
+        assert cfg.tex_after == str(source_file.parent / "after.tex")
+
     # def test_reports_missing_preamble_file(self, tmp_path):
     #     """A missing preamble file raises an error with its resolved path."""
     #     source_file = tmp_path / "docs" / "source.md"

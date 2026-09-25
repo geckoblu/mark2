@@ -1,7 +1,7 @@
 """Tests for the ConTeXt header builder."""
 
 from mark2.renderer.context.config import ContextConfig
-from mark2.renderer.context.header import build_header
+from mark2.renderer.context.header import build_footer, build_header
 
 
 class TestHeaderAtRecto:
@@ -42,3 +42,17 @@ class TestHeaderAtRecto:
         assert "\\setupinteraction[\n" in header
         assert "    title={My Book \\& Notes},\n" in header
         assert "    author={John Doe},\n" in header
+
+    def test_inserts_tex_before_after_document_text(self, tmp_path):
+        """The optional TeX files are read immediately inside the document bounds."""
+        cfg = ContextConfig.a4()
+        cfg.tex_before = str(tmp_path / "before.tex")
+        cfg.tex_after = str(tmp_path / "after.tex")
+
+        header = build_header(cfg)
+        footer = build_footer(cfg)
+
+        before = f"\\readfile{{{cfg.tex_before}}}{{}}{{}}\n\n"
+        after = f"\\readfile{{{cfg.tex_after}}}{{}}{{}}\n\n"
+        assert header.index("\\starttext") < header.index(before)
+        assert footer == f"{after}\\stoptext\n"

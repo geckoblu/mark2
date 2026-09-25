@@ -8,7 +8,7 @@ from markdown_it.utils import EnvType, OptionsDict
 from mark2.renderer.util import open_output
 from mark2.renderer.baserenderer import BaseRenderer
 from mark2.renderer.context.config import ContextConfig
-from mark2.renderer.context.header import build_header
+from mark2.renderer.context.header import build_footer, build_header
 from mark2.renderer.metadata import get_document_metadata
 from mark2.plugins.headingsid_plugin import slugify
 
@@ -49,7 +49,7 @@ class ConTeXtRenderer(BaseRenderer):
 
         super().render(filtered, options, env)
 
-        self.result.append(CONTEXT_FOOTER)
+        self.result.append(build_footer(cfg))
 
         tex = "".join(self.result)
 
@@ -577,7 +577,3 @@ class ConTeXtRenderer(BaseRenderer):
         name = tokens[idx].type.removeprefix("container_").removesuffix("_close")
         context_name = name.capitalize()
         self.result.append(f"\\stop{context_name}\n\n")
-
-
-CONTEXT_FOOTER = """\\stoptext
-"""

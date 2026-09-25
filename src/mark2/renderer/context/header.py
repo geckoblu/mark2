@@ -41,8 +41,21 @@ def build_header(cfg: ContextConfig, title: str = "", author: str = "") -> str:
         _other_sections(),
         _additional_preamble(cfg.preamble),
         "\\starttext\n\n",
+        _readfile(cfg.tex_before),
     ]
     return "\n".join(section for section in sections if section)
+
+
+def build_footer(cfg: ContextConfig) -> str:
+    """Build the document footer, including the optional trailing TeX file."""
+    return f"{_readfile(cfg.tex_after)}\\stoptext\n"
+
+
+def _readfile(tex_file: str | None) -> str:
+    if tex_file is None:
+        return ""
+    # return f"\\readfile{{{tex_file}}}{{}}{{FILE NOT FOUND: {tex_file}}}\n"
+    return f"\\readfile{{{tex_file}}}{{}}{{}}\n\n"
 
 
 def _interaction_section(title: str, author: str) -> str:

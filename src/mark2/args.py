@@ -116,6 +116,16 @@ def configure_parser() -> argparse.ArgumentParser:
         type=argparsext.FileType("r", extension=["tex"]),
         help="additional ConTeXt preamble for PDF",
     )
+    pdf_group.add_argument(
+        "--pdf-tex-before",
+        type=argparsext.FileType("r", extension=["tex"]),
+        help="ConTeXt file to read immediately after \\starttext",
+    )
+    pdf_group.add_argument(
+        "--pdf-tex-after",
+        type=argparsext.FileType("r", extension=["tex"]),
+        help="ConTeXt file to read immediately before \\stoptext",
+    )
 
     # MARKDOWN options ---------------------------
     # markdown_group = parser.add_argument_group("MARKDOWN options")
@@ -179,6 +189,10 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         parser.error("--pdf-font-name is only valid with --format pdf")
     if fmt != "pdf" and args.pdf_preamble:
         parser.error("--pdf-preamble is only valid with --format pdf")
+    if fmt != "pdf" and args.pdf_tex_before:
+        parser.error("--pdf-tex-before is only valid with --format pdf")
+    if fmt != "pdf" and args.pdf_tex_after:
+        parser.error("--pdf-tex-after is only valid with --format pdf")
 
     # if fmt != "md" and args.md_word_wrap:
     #     parser.error("--md-word-wrap is only valid with --format md")
@@ -266,6 +280,8 @@ def get_env(args: argparse.Namespace) -> EnvType:
         env["pdf_font_size"] = args.pdf_font_size
         env["pdf_font_name"] = args.pdf_font_name
         env["pdf_preamble"] = args.pdf_preamble
+        env["pdf_tex_before"] = args.pdf_tex_before
+        env["pdf_tex_after"] = args.pdf_tex_after
 
     if args.format == "md":
         if args.md_word_wrap is None:

@@ -92,6 +92,34 @@ class TestArgs:
         env = get_env(args)
         assert env["pdf_keep_tex"] is False
 
+    def test_pdf_tex_files_are_passed_to_pdf_rendering(self, monkeypatch, tmp_path):
+        """The before/after TeX files are accepted and exposed in the environment."""
+        input_file = tmp_path / "input.md"
+        before_file = tmp_path / "before.tex"
+        after_file = tmp_path / "after.tex"
+        input_file.write_text("# Title\n", encoding="utf-8")
+        before_file.touch()
+        after_file.touch()
+
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "mark2",
+                str(input_file),
+                "--format",
+                "pdf",
+                "--pdf-tex-before",
+                str(before_file),
+                "--pdf-tex-after",
+                str(after_file),
+            ],
+        )
+
+        args = parse_args()
+
+        assert get_env(args)["pdf_tex_before"] == str(before_file)
+        assert get_env(args)["pdf_tex_after"] == str(after_file)
+
     def test_pdf_page_format_accepts_a5(self, monkeypatch, tmp_path):
         """`--pdf-page-format A5` is passed to PDF rendering."""
         input_file = tmp_path / "input.md"

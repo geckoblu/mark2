@@ -1,10 +1,10 @@
 # Mark2
 
-A powerful and flexible Markdown converter that transforms Markdown files into multiple output formats including HTML, EPUB, PDF, and ConTeXt (TeX).
+A powerful and flexible Markdown converter that transforms Markdown files into HTML, EPUB, and PDF.
 
 ## Features
 
-- **Multiple Output Formats**: Convert Markdown to HTML, EPUB, PDF, ConTeXt (TeX), or Markdown
+- **Multiple Output Formats**: Convert Markdown to HTML, EPUB, or PDF
 - **MyST Markdown Support**: Extended Markdown syntax with MyST (Markedly Structured Text) features
 - **Front Matter**: Support for YAML front matter metadata
 - **Footnotes**: Automatic footnote handling and rendering
@@ -37,9 +37,12 @@ See the [Extensions Over CommonMark](#extensions-over-commonmark) section for de
 git clone https://github.com/geckoblu/mark2.git
 cd mark2
 
-# Install dependencies (requires Python 3.x)
+# Install Python dependencies (requires Python 3.x)
 pip3 install markdown-it-py mdit-py-plugins
 ```
+
+PDF output also requires the external `context` command from [ConTeXt](https://wiki.contextgarden.net/Introduction/Installation#Installation).
+The repository is run directly from source, so `mark2.sh` sets `PYTHONPATH` automatically.
 
 ## Usage
 
@@ -52,7 +55,6 @@ pip3 install markdown-it-py mdit-py-plugins
 # Specify output format
 ./mark2.sh input.md -f epub
 ./mark2.sh input.md -f pdf
-./mark2.sh input.md -f tex
 
 # Specify output file
 ./mark2.sh input.md -o output.html
@@ -69,8 +71,8 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -f {html,epub,pdf,tex}, --format {html,epub,pdf,tex}
-                        output format (choices: html, epub, pdf, tex) [default: html]
+  -f {html,epub,pdf}, --format {html,epub,pdf}
+                        output format (choices: html, epub, pdf) [default: html]
   -o OUTPUT_FILENAME, --output-filename OUTPUT_FILENAME
                         output file name (use '-' for stdout) [default: input name with format extension]
   -q, --quiet           suppress non-error messages
@@ -79,7 +81,10 @@ options:
 EPUB options:
   --epub-cover EPUB_COVER
                         cover image for epub
-  --epub-generatecover  generate cover for epub
+  --epub-generatefrontpage
+                        generate frontpage for epub
+  --epub-keepstylesheet
+                        keep existing stylesheet for epub
   --epub-stylesheet EPUB_STYLESHEET
                         stylesheet for epub
   --epub-split-at-header {h1,h2,h3,h4,h5,h6}
@@ -93,6 +98,12 @@ PDF options:
                         main body font size for PDF output, e.g. '12pt' [default: format-dependent]
   --pdf-font-name PDF_FONT_NAME
                         main body font name for PDF output, e.g. 'libertinus' [default: format-dependent]
+  --pdf-preamble PDF_PREAMBLE
+                        additional ConTeXt preamble for PDF
+  --pdf-tex-before PDF_TEX_BEFORE
+                        ConTeXt file to read immediately after \starttext
+  --pdf-tex-after PDF_TEX_AFTER
+                        ConTeXt file to read immediately before \stoptext
 ```
 
 ### Examples
@@ -109,9 +120,6 @@ PDF options:
 
 # Convert to PDF with a custom page format, font, and font size
 ./mark2.sh report.md -f pdf --pdf-page-format A5 --pdf-font-name libertinus --pdf-font-size 11pt
-
-# Generate ConTeXt source
-./mark2.sh article.md -f tex -o article.tex
 
 # Process stdin to stdout
 cat notes.md | ./mark2.sh - -f html > notes.html
@@ -161,7 +169,7 @@ summary: >
 **Features:**
 - Must be the first thing in the file
 - Enclosed by `---` markers
-- Supports standard YAML syntax including multi-line values
+- Supports a simplified YAML subset, including typed values and multi-line values
 - Metadata can be used by renderers (especially EPUB and PDF)
 
 **PDF-specific keys:**
@@ -175,12 +183,16 @@ page-format defaults (A4/A5) but are overridden by the matching `--pdf-*` CLI op
 pdf-font-size: 11pt
 pdf-font-name: libertinus
 pdf-header-at-recto: h2,h3
+pdf-tex-before: before.tex
+pdf-tex-after: after.tex
 ---
 ```
 
 - `pdf-font-size` / `pdf-font-name`: main body font size/name
 - `pdf-header-at-recto`: comma-separated heading levels (`h1`, `h2`, `h3`, `h4`) that must
   always start on a right-hand (recto) page
+- `pdf-tex-before` / `pdf-tex-after`: TeX files read immediately after `\starttext` or
+  immediately before `\stoptext`
 - Each key also accepts a page-format-specific variant that takes precedence over the
   generic one, e.g. `pdf-a4-font-size`, `pdf-a5-font-name`, `pdf-a4-header-at-recto`
 
@@ -781,7 +793,7 @@ The project is structured as follows:
     - `html.py`: HTML renderer
     - `md.py`: Markdown renderer
     - `pdf.py`: PDF renderer
-    - `context.py`: ConTeXt renderer
+    - `context/renderer.py`: ConTeXt renderer
     - `epub/`: EPUB-specific rendering
 
 ## Development

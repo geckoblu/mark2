@@ -70,6 +70,8 @@ class ContextConfig:
 
     # Preamble
     preamble: str | None = None
+    tex_before: str | None = None
+    tex_after: str | None = None
 
     @classmethod
     def a4(cls) -> "ContextConfig":
@@ -168,33 +170,40 @@ class ContextConfig:
             cfg.backspace = env["pdf_backspace"]
         cfg.backspace = _sum_measurements(cfg.backspace, cfg.gutter)
 
-        # pdf-preamble
-        if env.get("pdf_preamble"):
-            preamble_path = Path(env["pdf_preamble"]).resolve()
-            cfg.preamble = str(preamble_path)
-        else:
-            value = _front_matter_value(front_matter, "preamble", pfl)
+        for attribute in ("preamble", "tex_before", "tex_after"):
+            value = _resolve_tex_file(env, front_matter, pfl, attribute)
             if value is not None:
-                preamble_path = Path(value)
-                if not preamble_path.is_absolute():
-                    # Relative paths are resolved relative to the source directory.
-                    input_filename = env.get("input_filename", "-")
-                    source_directory = (
-                        Path(input_filename).resolve().parent
-                        if input_filename != "-"
-                        else Path.cwd()
-                    )
-                    preamble_path = source_directory / preamble_path
-                preamble_path = preamble_path.resolve()
-                if not preamble_path.is_file():
-                    print(
-                        f"Preamble file defined in front matter not found:\n\t{preamble_path}",
-                        file=sys.stderr,
-                    )
-                    # raise FileNotFoundError(f"Preamble file not found: {preamble_path}")
-                cfg.preamble = str(preamble_path)
+                setattr(cfg, attribute, value)
 
         return cfg
+
+
+def _resolve_tex_file(
+    env: EnvType, front_matter: dict, page_format: str, attribute: str
+) -> str | None:
+    """Resolve a TeX file path from the environment or front matter."""
+    value = env.get(f"pdf_{attribute}")
+    source = "command line" if value is not None else "front matter"
+    if value is None:
+        value = _front_matter_value(front_matter, attribute.replace("_", "-"), page_format)
+    if value is None:
+        return None
+
+    tex_path = Path(value)
+    if not tex_path.is_absolute():
+        input_filename = env.get("input_filename", "-")
+        source_directory = (
+            Path(input_filename).resolve().parent if input_filename != "-" else Path.cwd()
+        )
+        tex_path = source_directory / tex_path
+    tex_path = tex_path.resolve()
+    if source == "front matter" and not tex_path.is_file():
+        print(
+            f"{attribute.replace('_', ' ').capitalize()} file defined in front matter not found:\n"
+            f"\t{tex_path}",
+            file=sys.stderr,
+        )
+    return str(tex_path)
 
 
 def _front_matter_value(front_matter: dict, attribute: str, page_format: str):
